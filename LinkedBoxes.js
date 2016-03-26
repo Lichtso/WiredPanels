@@ -3,12 +3,14 @@ var colaLayout = cola.Layout;
 function LinkedBoxes(parentElement) {
     this.layoutEngine = new colaLayout()
         .linkDistance(250)
+        .size([250, 250]) // TODO
         .avoidOverlaps(true)
         .on('tick', function() {
         trash = [];
         for(var j = 0; j < this.nodes.length; ++j) {
             node = this.nodes[j];
             if(node.deathFlag) {
+                this.dirtyFlag = true;
                 trash.push(node.group);
                 this.nodes.splice(j, 1);
                 --j;
@@ -56,10 +58,7 @@ function LinkedBoxes(parentElement) {
             for(var i = 0; i < trash.length; ++i)
                 this.svg.removeChild(trash[i]);
         }.bind(this), 250);
-        if(this.dirtyFlag) {
-            this.layoutEngine.start();
-            this.dirtyFlag = false;
-        }
+        this.syncGraph();
     }.bind(this));
     this.nodes = this.layoutEngine._nodes;
     this.links = [];
@@ -68,6 +67,8 @@ function LinkedBoxes(parentElement) {
     parentElement.appendChild(this.svg);
     this.svg.parentNode.classList.add('LinkedBoxes');
     this.svg.parentNode.onmousemove = function(event) {
+        event.stopPropagation();
+        event.preventDefault();
         if(!this.nodeToDrag)
             return;
         colaLayout.drag(this.nodeToDrag, {
@@ -77,10 +78,17 @@ function LinkedBoxes(parentElement) {
         this.layoutEngine.resume();
     }.bind(this);
     this.svg.parentNode.onmouseup = function(event) {
+        event.stopPropagation();
+        event.preventDefault();
         if(!this.nodeToDrag)
             return;
         colaLayout.dragEnd(this.nodeToDrag);
         this.nodeToDrag = undefined;
+    }.bind(this);
+    this.svg.parentNode.onkeydown = function(event) { // TODO
+        event.stopPropagation();
+        event.preventDefault();
+        // event.keyCode
     }.bind(this);
 
     svgDefs = this.createElement('defs', this.svg);
@@ -93,8 +101,6 @@ function LinkedBoxes(parentElement) {
     arrowMarker.setAttribute('orient', 'auto');
     arrowPath = this.createElement('path', arrowMarker);
     arrowPath.setAttribute('d', 'M0,1L5,3L0,5z');
-
-    this.layoutEngine.start();
 };
 
 LinkedBoxes.prototype.nodeMargin = 20;
@@ -157,6 +163,8 @@ LinkedBoxes.prototype.syncNode = function(node) {
         this.svg.classList.add('fadeIn');
 
         node.group.onmousedown = function(event) {
+            event.stopPropagation();
+            event.preventDefault();
             this.nodeToDrag = node;
             colaLayout.dragStart(node);
         }.bind(this);
@@ -224,6 +232,7 @@ LinkedBoxes.prototype.createNode = function(segementsLeft, segementsRight) {
         node.rightSide[i] = {};
     this.syncNode(node);
     this.nodes.push(node);
+    this.dirtyFlag = true;
     return node;
 };
 
@@ -273,4 +282,11 @@ LinkedBoxes.prototype.createLink = function(link, srcIndex, dstIndex) {
     }
     this.links.push(link);
     this.dirtyFlag = true;
+};
+
+LinkedBoxes.prototype.syncGraph = function() {
+    if(!this.dirtyFlag)
+        return;
+    this.dirtyFlag = false;
+    this.layoutEngine.start();
 };

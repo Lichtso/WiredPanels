@@ -50,16 +50,6 @@
     fill: none;
 }
 
-.LinkedBoxes .link {
-    stroke-linecap: round;
-    stroke-width: 2;
-    fill: none;
-}
-
-.LinkedBoxes .arrow {
-    marker-end: url(#arrow);
-}
-
 .LinkedBoxes * {
     font-family: Verdana;
     font-size: 12px;
@@ -69,7 +59,21 @@
     color: white;
 }
 
+.LinkedBoxes .link {
+    stroke-linecap: round;
+    stroke-width: 2;
+    fill: none;
+}
+
+.LinkedBoxes .cursor {
+    filter: url(#blurFilter);
+}
+
+/* .LinkedBoxes .arrow {
+    marker-end: url(#arrowMarker);
+}
+
 .LinkedBoxes .disabled {
     fill: gray;
     color: gray;
-}
+} */

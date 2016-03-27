@@ -13,6 +13,8 @@
                 linkedBoxes.createLink({srcNode:linkedBoxes.nodes[1], dstNode:linkedBoxes.nodes[2]}, -2, 1);
                 linkedBoxes.createLink({srcNode:linkedBoxes.nodes[0], dstNode:linkedBoxes.nodes[0]}, 0, 1);
                 linkedBoxes.syncGraph();
+                linkedBoxes.cursorNode = linkedBoxes.nodes[0];
+                linkedBoxes.setCursorIndex(0);
             }
         </script>
     </head>

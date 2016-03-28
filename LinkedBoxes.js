@@ -1,14 +1,6 @@
 var colaLayout = cola.Layout;
 
 function LinkedBoxes(parentElement) {
-    this.layoutEngine = new colaLayout()
-        .linkDistance(250)
-        .size([250, 250]) // TODO
-        .avoidOverlaps(true)
-        .on('tick', this.tick.bind(this));
-    this.nodes = this.layoutEngine._nodes;
-    this.links = [];
-
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     parentElement.appendChild(this.svg);
     this.svg.parentNode.classList.add('LinkedBoxes');
@@ -65,6 +57,14 @@ function LinkedBoxes(parentElement) {
     feMergeNode.setAttribute('in', 'brighter');
     feMergeNode = this.createElement('feMergeNode', feMerge);
     feMergeNode.setAttribute('in', 'SourceGraphic');
+
+    this.layoutEngine = new colaLayout()
+        .linkDistance(150)
+        .size([this.svg.offsetWidth, this.svg.offsetHeight])
+        .avoidOverlaps(true)
+        .on('tick', this.tick.bind(this));
+    this.nodes = this.layoutEngine._nodes;
+    this.links = [];
 };
 
 LinkedBoxes.prototype.config = {
@@ -73,9 +73,16 @@ LinkedBoxes.prototype.config = {
     nodeCornerRadius: 10,
     circleRadius: 5,
     fontSize: 12,
-    hangingLinkStyle: true,
+    linkStyle: 'hybrid',
     headCircle: true,
     segmentLines: true
+};
+
+LinkedBoxes.prototype.deleteCircle = function(circle) {
+    if(this.cursorCircle == circle)
+        this.cursorNode = undefined;
+    for(pair of circle.links)
+        pair[1].deathFlag = true;
 };
 
 LinkedBoxes.prototype.tick = function() {
@@ -84,6 +91,12 @@ LinkedBoxes.prototype.tick = function() {
     for(var j = 0; j < this.nodes.length; ++j) {
         node = this.nodes[j];
         if(node.deathFlag) {
+            if(node.circle)
+                this.deleteCircle(node.circle);
+            for(var i = 0; i < node.leftSide.length; ++i)
+                this.deleteCircle(node.leftSide[i].circle);
+            for(var i = 0; i < node.rightSide.length; ++i)
+                this.deleteCircle(node.rightSide[i].circle);
             this.dirtyFlag = true;
             trash.push(node.group);
             this.nodes.splice(j, 1);
@@ -106,8 +119,8 @@ LinkedBoxes.prototype.tick = function() {
         if(link.deathFlag) {
             this.dirtyFlag = true;
             trash.push(link.path);
-            link.srcCircle.links.remove(link.dstNode);
-            link.dstCircle.links.remove(link.srcNode);
+            link.srcCircle.links.delete(link.dstNode);
+            link.dstCircle.links.delete(link.srcNode);
             if(link.srcNode != link.dstNode) {
                 this.unlinkNodes(link.srcNode, link.dstNode);
                 this.unlinkNodes(link.dstNode, link.srcNode);
@@ -116,15 +129,27 @@ LinkedBoxes.prototype.tick = function() {
             --j;
             continue;
         }
-        if(this.config.hangingLinkStyle) {
-            diffX = link.dstCircle.x-link.srcCircle.x;
-            maxY = Math.max(link.dstCircle.y, link.srcCircle.y)+20;
-            link.path.setAttribute('d', 'M'+link.srcCircle.x+','+link.srcCircle.y+'C'+(link.srcCircle.x+diffX*0.25)+','+maxY+' '+(link.srcCircle.x+diffX*0.75)+','+maxY+' '+link.dstCircle.x+','+link.dstCircle.y);
-        } else {
-            if(Math.abs(link.srcCircle.x-link.dstCircle.x) < Math.abs(link.srcCircle.y-link.dstCircle.y))
+        switch(this.config.linkStyle) {
+            case 'straight':
+                link.path.setAttribute('d', 'M'+link.srcCircle.x+','+link.srcCircle.y+'L'+link.dstCircle.x+','+link.dstCircle.y);
+            break;
+            case 'vertical':
                 link.path.setAttribute('d', 'M'+link.srcCircle.x+','+link.srcCircle.y+'C'+link.dstCircle.x+','+link.srcCircle.y+' '+link.srcCircle.x+','+link.dstCircle.y+' '+link.dstCircle.x+','+link.dstCircle.y);
-            else
+            break;
+            case 'horizontal':
                 link.path.setAttribute('d', 'M'+link.srcCircle.x+','+link.srcCircle.y+'C'+link.srcCircle.x+','+link.dstCircle.y+' '+link.dstCircle.x+','+link.srcCircle.y+' '+link.dstCircle.x+','+link.dstCircle.y);
+            break;
+            case 'hybrid':
+                if(Math.abs(link.srcCircle.x-link.dstCircle.x) < Math.abs(link.srcCircle.y-link.dstCircle.y))
+                    link.path.setAttribute('d', 'M'+link.srcCircle.x+','+link.srcCircle.y+'C'+link.dstCircle.x+','+link.srcCircle.y+' '+link.srcCircle.x+','+link.dstCircle.y+' '+link.dstCircle.x+','+link.dstCircle.y);
+                else
+                    link.path.setAttribute('d', 'M'+link.srcCircle.x+','+link.srcCircle.y+'C'+link.srcCircle.x+','+link.dstCircle.y+' '+link.dstCircle.x+','+link.srcCircle.y+' '+link.dstCircle.x+','+link.dstCircle.y);
+            break;
+            case 'gravity':
+                diffX = link.dstCircle.x-link.srcCircle.x;
+                maxY = Math.max(link.dstCircle.y, link.srcCircle.y)+20;
+                link.path.setAttribute('d', 'M'+link.srcCircle.x+','+link.srcCircle.y+'C'+(link.srcCircle.x+diffX*0.25)+','+maxY+' '+(link.srcCircle.x+diffX*0.75)+','+maxY+' '+link.dstCircle.x+','+link.dstCircle.y);
+            break;
         }
     }
 
@@ -205,8 +230,7 @@ LinkedBoxes.prototype.syncNodeSide = function(width, side, isLeft) {
     for(var i = 0; i < side.length; ++i) {
         segment = side[i];
         if(segment.deathFlag) {
-            if(segment.circle == this.cursorCircle)
-                this.cursorNode = undefined;
+            this.deleteCircle(segment.circle);
             side.group.removeChild(side.group.childNodes[i*2+1]);
             side.group.removeChild(side.group.childNodes[i*2]);
             side.splice(i, 1);
@@ -220,7 +244,7 @@ LinkedBoxes.prototype.syncNodeSide = function(width, side, isLeft) {
             segment.circle.setAttribute('r', this.config.circleRadius);
             segment.label = this.createElement('text', side.group);
             segment.label.setAttribute('text-anchor', (isLeft) ? 'start' : 'end');
-            segment.label.textContent = 'null';
+            segment.label.textContent = 'undefined';
         }
         posY = (i+1)*this.config.nodePadding*2;
 
@@ -267,7 +291,7 @@ LinkedBoxes.prototype.syncNode = function(node) {
         node.label = this.createElement('text', node.group);
         node.label.setAttribute('text-anchor', 'middle');
         node.label.setAttribute('y', Math.round(this.config.nodePadding+this.config.fontSize*0.4));
-        node.label.textContent = 'null';
+        node.label.textContent = 'undefined';
 
         node.leftSide.group = this.createElement('g', node.group);
         node.rightSide.group = this.createElement('g', node.group);
@@ -303,19 +327,23 @@ LinkedBoxes.prototype.syncNode = function(node) {
     return node;
 };
 
-LinkedBoxes.prototype.createNode = function(segementsLeft, segementsRight) {
-    node = {};
+LinkedBoxes.prototype.initializeNode = function(node) {
     node.links = new Map;
+    this.syncNode(node);
+    this.nodes.push(node);
+    this.dirtyFlag = true;
+    return node;
+};
+
+LinkedBoxes.prototype.createNodeHelper = function(segementsLeft, segementsRight) {
+    node = {};
     node.leftSide = Array(segementsLeft);
     for(var i = 0; i < segementsLeft; ++i)
         node.leftSide[i] = {};
     node.rightSide = Array(segementsRight);
     for(var i = 0; i < segementsRight; ++i)
         node.rightSide[i] = {};
-    this.syncNode(node);
-    this.nodes.push(node);
-    this.dirtyFlag = true;
-    return node;
+    return this.initializeNode(node);
 };
 
 LinkedBoxes.prototype.linkNodes = function(srcNode, dstNode) {
@@ -370,11 +398,9 @@ LinkedBoxes.prototype.getIndexOfCircle = function(node, circle) {
     return undefined;
 };
 
-LinkedBoxes.prototype.createLink = function(link, srcIndex, dstIndex) {
-    link.srcCircle = this.getCircleAtIndex(link.srcNode, srcIndex);
-    link.dstCircle = this.getCircleAtIndex(link.dstNode, dstIndex);
+LinkedBoxes.prototype.initializeLink = function(link) {
     if(link.srcCircle.links.has(link.dstNode))
-        return false;
+        return undefined;
     link.srcCircle.links.set(link.dstNode, link);
     link.dstCircle.links.set(link.srcNode, link);
     link.path = this.createElement('path', this.svg);
@@ -389,7 +415,21 @@ LinkedBoxes.prototype.createLink = function(link, srcIndex, dstIndex) {
     }
     this.links.push(link);
     this.dirtyFlag = true;
-    return true;
+    return link;
+};
+
+LinkedBoxes.prototype.delete = function(element) {
+    element.deathFlag = true;
+    this.dirtyFlag = true;
+};
+
+LinkedBoxes.prototype.createLinkHelper = function(srcNode, dstNode, srcIndex, dstIndex) {
+    link = {};
+    link.srcNode = srcNode;
+    link.dstNode = dstNode;
+    link.srcCircle = this.getCircleAtIndex(link.srcNode, srcIndex);
+    link.dstCircle = this.getCircleAtIndex(link.dstNode, dstIndex);
+    return this.initializeLink(link);
 };
 
 LinkedBoxes.prototype.syncGraph = function() {

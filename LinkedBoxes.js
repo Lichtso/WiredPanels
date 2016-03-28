@@ -4,17 +4,18 @@ function LinkedBoxes(parentElement) {
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     parentElement.appendChild(this.svg);
     this.svg.parentNode.classList.add('LinkedBoxes');
-    this.svg.parentNode.onkeydown = this.handleKeyboard.bind(this);
+    document.body.onkeydown = this.handleKeyboard.bind(this);
     this.svg.parentNode.onmousemove = function(event) {
         event.stopPropagation();
         event.preventDefault();
         if(!this.nodeToDrag)
             return;
+        rect = this.svg.getBoundingClientRect();
         colaLayout.drag(this.nodeToDrag, {
-            x:event.pageX-this.svg.offsetLeft+this.config.nodeMargin/2,
-            y:event.pageY-this.svg.offsetTop+this.config.nodeMargin/2
+            x:event.pageX-rect.left-window.pageXOffset+this.config.nodeMargin/2,
+            y:event.pageY-rect.top-window.pageYOffset+this.config.nodeMargin/2
         });
-        this.layoutEngine.resume();
+        this.tickGraph();
     }.bind(this);
     this.svg.parentNode.onmouseup = function(event) {
         event.stopPropagation();
@@ -61,10 +62,9 @@ function LinkedBoxes(parentElement) {
     this.layoutEngine = new colaLayout()
         .linkDistance(150)
         .size([this.svg.offsetWidth, this.svg.offsetHeight])
-        .avoidOverlaps(true)
-        .on('tick', this.tick.bind(this));
+        .avoidOverlaps(true);
     this.nodes = this.layoutEngine._nodes;
-    this.links = [];
+    this.links = new Set;
 };
 
 LinkedBoxes.prototype.config = {
@@ -81,13 +81,27 @@ LinkedBoxes.prototype.config = {
 LinkedBoxes.prototype.deleteCircle = function(circle) {
     if(this.cursorCircle == circle)
         this.cursorNode = undefined;
-    for(pair of circle.links)
-        pair[1].deathFlag = true;
+    for(pair of circle.linksPerNode) {
+        set = pair[1];
+        for(link of set)
+            link.deathFlag = true;
+    }
 };
 
-LinkedBoxes.prototype.tick = function() {
-    trash = [];
+LinkedBoxes.prototype.tickCircle = function(posX, posY, element) {
+    element.x = posX+parseInt(element.getAttribute('cx'));
+    element.y = posY+parseInt(element.getAttribute('cy'));
+};
 
+LinkedBoxes.prototype.tickGraph = function() {
+    this.layoutEngine._running = true;
+    this.layoutEngine._alpha = 0.1;
+    // this.layoutEngine.trigger({type:'start', alpha:this.layoutEngine._alpha});
+    for(var i = 0; i < 5; ++i)
+        if(this.layoutEngine.tick())
+            break;
+
+    trash = new Set;
     for(var j = 0; j < this.nodes.length; ++j) {
         node = this.nodes[j];
         if(node.deathFlag) {
@@ -98,7 +112,7 @@ LinkedBoxes.prototype.tick = function() {
             for(var i = 0; i < node.rightSide.length; ++i)
                 this.deleteCircle(node.rightSide[i].circle);
             this.dirtyFlag = true;
-            trash.push(node.group);
+            trash.add(node.group);
             this.nodes.splice(j, 1);
             --j;
             continue;
@@ -107,26 +121,24 @@ LinkedBoxes.prototype.tick = function() {
         posY = node.y-node.height/2;
         node.group.setAttribute('transform', 'translate('+posX+', '+posY+')');
         if(node.circle)
-            this.syncCircle(posX, posY, node.circle);
+            this.tickCircle(posX, posY, node.circle);
         for(var i = 0; i < node.leftSide.length; ++i)
-            this.syncCircle(posX, posY, node.leftSide[i].circle);
+            this.tickCircle(posX, posY, node.leftSide[i].circle);
         for(var i = 0; i < node.rightSide.length; ++i)
-            this.syncCircle(posX, posY, node.rightSide[i].circle);
+            this.tickCircle(posX, posY, node.rightSide[i].circle);
     }
 
-    for(var j = 0; j < this.links.length; ++j) {
-        link = this.links[j];
+    for(link of this.links) {
         if(link.deathFlag) {
             this.dirtyFlag = true;
-            trash.push(link.path);
-            link.srcCircle.links.delete(link.dstNode);
-            link.dstCircle.links.delete(link.srcNode);
+            trash.add(link.path);
+            this.unlinkCircle(link, link.srcCircle, link.dstNode);
+            this.unlinkCircle(link, link.dstCircle, link.srcNode);
             if(link.srcNode != link.dstNode) {
                 this.unlinkNodes(link.srcNode, link.dstNode);
                 this.unlinkNodes(link.dstNode, link.srcNode);
             }
-            this.links.splice(j, 1);
-            --j;
+            this.links.delete(link);
             continue;
         }
         switch(this.config.linkStyle) {
@@ -153,13 +165,13 @@ LinkedBoxes.prototype.tick = function() {
         }
     }
 
-    for(var i = 0; i < trash.length; ++i) {
-        trash[i].classList.remove('fadeIn');
-        trash[i].classList.add('fadeOut');
+    for(element of trash) {
+        element.classList.remove('fadeIn');
+        element.classList.add('fadeOut');
     }
     window.setTimeout(function() {
-        for(var i = 0; i < trash.length; ++i)
-            this.svg.removeChild(trash[i]);
+        for(element of trash)
+            this.svg.removeChild(element);
     }.bind(this), 250);
 
     this.syncGraph();
@@ -167,6 +179,7 @@ LinkedBoxes.prototype.tick = function() {
 
 LinkedBoxes.prototype.handleKeyboard = function(event) {
     event.stopPropagation();
+    event.preventDefault();
     if(!this.cursorNode)
         return;
     index = this.getIndexOfCircle(this.cursorNode, this.cursorCircle);
@@ -221,11 +234,6 @@ LinkedBoxes.prototype.createElement = function(tag, parentNode) {
     return element;
 };
 
-LinkedBoxes.prototype.syncCircle = function(posX, posY, element) {
-    element.x = posX+parseInt(element.getAttribute('cx'));
-    element.y = posY+parseInt(element.getAttribute('cy'));
-};
-
 LinkedBoxes.prototype.syncNodeSide = function(width, side, isLeft) {
     for(var i = 0; i < side.length; ++i) {
         segment = side[i];
@@ -240,7 +248,7 @@ LinkedBoxes.prototype.syncNodeSide = function(width, side, isLeft) {
 
         if(!segment.circle) {
             segment.circle = this.createElement('circle', side.group);
-            segment.circle.links = new Map;
+            segment.circle.linksPerNode = new Map;
             segment.circle.setAttribute('r', this.config.circleRadius);
             segment.label = this.createElement('text', side.group);
             segment.label.setAttribute('text-anchor', (isLeft) ? 'start' : 'end');
@@ -282,7 +290,7 @@ LinkedBoxes.prototype.syncNode = function(node) {
 
         if(this.config.headCircle) {
             node.circle = this.createElement('circle', node.group);
-            node.circle.links = new Map;
+            node.circle.linksPerNode = new Map;
             node.circle.y = Math.round(-this.config.nodePadding);
             node.circle.setAttribute('cy', node.circle.y);
             node.circle.setAttribute('r', this.config.circleRadius);
@@ -328,7 +336,7 @@ LinkedBoxes.prototype.syncNode = function(node) {
 };
 
 LinkedBoxes.prototype.initializeNode = function(node) {
-    node.links = new Map;
+    node.sharedLinksPerNode = new Map;
     this.syncNode(node);
     this.nodes.push(node);
     this.dirtyFlag = true;
@@ -344,28 +352,6 @@ LinkedBoxes.prototype.createNodeHelper = function(segementsLeft, segementsRight)
     for(var i = 0; i < segementsRight; ++i)
         node.rightSide[i] = {};
     return this.initializeNode(node);
-};
-
-LinkedBoxes.prototype.linkNodes = function(srcNode, dstNode) {
-    entry = srcNode.links.get(dstNode);
-    if(entry)
-        ++entry.arc;
-    else {
-        entry = {arc:0};
-        srcNode.links.set(dstNode, entry);
-        return entry;
-    }
-};
-
-LinkedBoxes.prototype.unlinkNodes = function(srcNode, dstNode) {
-    entry = srcNode.links.get(dstNode);
-    if(entry > 1)
-        --entry.arc;
-    else {
-        if(entry.link)
-            this.layoutEngine._links.splice(this.layoutEngine._links.indexOf(entry.link), 1);
-        srcNode.links.delete(dstNode);
-    }
 };
 
 LinkedBoxes.prototype.hasCircleAtIndex = function(node, index) {
@@ -398,22 +384,69 @@ LinkedBoxes.prototype.getIndexOfCircle = function(node, circle) {
     return undefined;
 };
 
+LinkedBoxes.prototype.linkNodes = function(srcNode, dstNode) {
+    entry = srcNode.sharedLinksPerNode.get(dstNode);
+    if(entry)
+        ++entry.arc;
+    else {
+        entry = {arc:1};
+        srcNode.sharedLinksPerNode.set(dstNode, entry);
+    }
+    return entry;
+};
+
+LinkedBoxes.prototype.unlinkNodes = function(srcNode, dstNode) {
+    entry = srcNode.sharedLinksPerNode.get(dstNode);
+    if(entry.arc > 1)
+        --entry.arc;
+    else {
+        if(entry.link)
+            this.layoutEngine._links.splice(this.layoutEngine._links.indexOf(entry.link), 1);
+        srcNode.sharedLinksPerNode.delete(dstNode);
+    }
+};
+
+LinkedBoxes.prototype.linkCircle = function(link, srcCircle, dstNode) {
+    set = undefined;
+    if(!srcCircle.linksPerNode.has(dstNode)) {
+        set = new Set;
+        srcCircle.linksPerNode.set(dstNode, set);
+    } else {
+        set = srcCircle.linksPerNode.get(dstNode);
+        if(set.has(link))
+            return false;
+    }
+    set.add(link);
+    return true;
+};
+
+LinkedBoxes.prototype.unlinkCircle = function(link, srcCircle, dstNode) {
+    if(!srcCircle.linksPerNode.has(dstNode))
+        return false;
+    set = srcCircle.linksPerNode.get(dstNode);
+    if(!set.has(link))
+        return false;
+    set.delete(link);
+    if(set.size == 0)
+        srcCircle.linksPerNode.delete(dstNode);
+    return true;
+};
+
 LinkedBoxes.prototype.initializeLink = function(link) {
-    if(link.srcCircle.links.has(link.dstNode))
-        return undefined;
-    link.srcCircle.links.set(link.dstNode, link);
-    link.dstCircle.links.set(link.srcNode, link);
+    if(!this.linkCircle(link, link.srcCircle, link.dstNode))
+        return;
+    this.linkCircle(link, link.dstCircle, link.srcNode);
     link.path = this.createElement('path', this.svg);
     link.path.classList.add('link');
     if(link.srcNode != link.dstNode) {
         entry = this.linkNodes(link.srcNode, link.dstNode);
         this.linkNodes(link.dstNode, link.srcNode);
-        if(entry) {
+        if(entry.arc == 1) {
             entry.link = {source:link.srcNode, target:link.dstNode};
             this.layoutEngine._links.push(entry.link);
         }
     }
-    this.links.push(link);
+    this.links.add(link);
     this.dirtyFlag = true;
     return link;
 };
@@ -437,6 +470,7 @@ LinkedBoxes.prototype.syncGraph = function() {
         return;
     this.dirtyFlag = false;
     this.layoutEngine.start();
+    this.tickGraph();
 };
 
 LinkedBoxes.prototype.setCursorCircle = function(circle) {
@@ -455,9 +489,12 @@ LinkedBoxes.prototype.setCursorIndex = function(index) {
 };
 
 LinkedBoxes.prototype.cursorFollowLink = function() {
-    if(!this.cursorNode || this.cursorCircle.links.size != 1)
+    if(!this.cursorNode || this.cursorCircle.linksPerNode.size != 1)
         return false;
-    link = this.cursorCircle.links.values().next().value;
+    set = this.cursorCircle.linksPerNode.values().next().value;
+    if(set.size != 1)
+        return false;
+    link = set.values().next().value;
     this.cursorNode = (this.cursorNode == link.srcNode) ? link.dstNode : link.srcNode;
     this.setCursorCircle((this.cursorCircle == link.srcCircle) ? link.dstCircle : link.srcCircle);
     return true;

@@ -17,8 +17,6 @@
 }
 
 .LinkedBoxes {
-    border-radius: 5px;
-    background: black;
     padding: 0px;
     margin: 0px;
     position: relative;
@@ -67,6 +65,18 @@
 
 .LinkedBoxes .cursor {
     filter: url(#blurFilter);
+}
+
+.LinkedBoxes .red {
+    stroke: #f44;
+}
+
+.LinkedBoxes .green {
+    stroke: #4f8;
+}
+
+.LinkedBoxes .blue {
+    stroke: #48f;
 }
 
 /* .LinkedBoxes .arrow {

@@ -291,7 +291,7 @@ module.exports.prototype.syncNode = function(node) {
 
     if(!node.group) {
         node.group = this.createElement('g', this.svg);
-        this.svg.classList.add('fadeIn');
+        node.group.classList.add('fadeIn');
 
         node.group.onmousedown = function(event) {
             this.nodeToDrag = node;

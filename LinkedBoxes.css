@@ -33,19 +33,13 @@
     padding: 0;
 }
 
-.LinkedBoxes path {
-    stroke: white;
-}
-
 .LinkedBoxes circle {
-    stroke: white;
-    fill: none;
+    fill: transparent;
 }
 
 .LinkedBoxes rect {
-    stroke: white;
     stroke-width: 1;
-    fill: none;
+    fill: transparent;
 }
 
 .LinkedBoxes * {
@@ -67,23 +61,6 @@
     filter: url(#blurFilter);
 }
 
-.LinkedBoxes .red {
-    stroke: #f44;
-}
-
-.LinkedBoxes .green {
-    stroke: #4f8;
-}
-
-.LinkedBoxes .blue {
-    stroke: #48f;
-}
-
 /* .LinkedBoxes .arrow {
     marker-end: url(#arrowMarker);
-}
-
-.LinkedBoxes .disabled {
-    fill: gray;
-    color: gray;
 } */

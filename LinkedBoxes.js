@@ -6,24 +6,26 @@ function LinkedBoxes(parentElement) {
     this.svg.parentNode.classList.add('LinkedBoxes');
     document.body.onkeydown = this.handleKeyboard.bind(this);
     this.svg.parentNode.onmousemove = function(event) {
-        event.stopPropagation();
-        event.preventDefault();
         if(!this.nodeToDrag)
-            return;
+            return true;
         rect = this.svg.getBoundingClientRect();
-        colaLayout.drag(this.nodeToDrag, {
-            x:event.pageX-rect.left-window.pageXOffset+this.config.nodeMargin/2,
-            y:event.pageY-rect.top-window.pageYOffset+this.config.nodeMargin/2
-        });
+        this.nodeToDrag.px = event.pageX-rect.left-window.pageXOffset+this.config.nodeMargin/2;
+        this.nodeToDrag.py = event.pageY-rect.top-window.pageYOffset+this.config.nodeMargin/2;
         this.tickGraph();
+        return false;
+    }.bind(this);
+    this.svg.parentNode.ontouchmove = function(event) {
+        return this.svg.parentNode.onmousemove(event.touches[0]);
     }.bind(this);
     this.svg.parentNode.onmouseup = function(event) {
-        event.stopPropagation();
-        event.preventDefault();
         if(!this.nodeToDrag)
-            return;
+            return true;
         colaLayout.dragEnd(this.nodeToDrag);
         this.nodeToDrag = undefined;
+        return false;
+    }.bind(this);
+    this.svg.parentNode.ontouchend = function(event) {
+        return this.svg.parentNode.onmouseup(event.touches[0]);
     }.bind(this);
 
     svgDefs = this.createElement('defs', this.svg);
@@ -61,14 +63,13 @@ function LinkedBoxes(parentElement) {
 
     this.layoutEngine = new colaLayout()
         .linkDistance(150)
-        .size([this.svg.offsetWidth, this.svg.offsetHeight])
         .avoidOverlaps(true);
     this.nodes = this.layoutEngine._nodes;
     this.links = new Set;
 };
 
 LinkedBoxes.prototype.config = {
-    nodeMargin: 20,
+    nodeMargin: 24,
     nodePadding: 12,
     nodeCornerRadius: 10,
     circleRadius: 5,
@@ -178,60 +179,75 @@ LinkedBoxes.prototype.tickGraph = function() {
 };
 
 LinkedBoxes.prototype.handleKeyboard = function(event) {
-    event.stopPropagation();
-    event.preventDefault();
     if(!this.cursorNode)
         return;
+    if(event.keyCode == 13 && this.cursorCircle.onactivation) {
+        this.cursorCircle.onactivation(event);
+        return false;
+    }
     index = this.getIndexOfCircle(this.cursorNode, this.cursorCircle);
     if(index < 0) {
         switch(event.keyCode) {
             case 37:
                 this.cursorFollowLink();
-            break;
+            return false;
             case 38:
                 this.setCursorIndex(index+1);
-            break;
+            return false;
             case 39:
                 this.setCursorIndex(-index);
-            break;
+            return false;
             case 40:
                 this.setCursorIndex(index-1);
-            break;
+            return false;
         }
     } else if(index > 0) {
         switch(event.keyCode) {
             case 37:
                 this.setCursorIndex(-index);
-            break;
+            return false;
             case 38:
                 this.setCursorIndex(index-1);
-            break;
+            return false;
             case 39:
                 this.cursorFollowLink();
-            break;
+            return false;
             case 40:
                 this.setCursorIndex(index+1);
-            break;
+            return false;
         }
     } else {
         switch(event.keyCode) {
             case 37:
                 this.setCursorIndex(index-1);
-            break;
+            return false;
             case 38:
                 this.cursorFollowLink();
-            break;
+            return false;
             case 39:
                 this.setCursorIndex(index+1);
-            break;
+            return false;
+            case 40:
+            return false;
         }
     }
+    return true;
 };
 
 LinkedBoxes.prototype.createElement = function(tag, parentNode) {
     element = document.createElementNS(this.svg.namespaceURI, tag);
     parentNode.appendChild(element);
     return element;
+};
+
+LinkedBoxes.prototype.setactivationHandlers = function(element) {
+    activation = function(event) {
+        if(element.onactivation)
+            element.onactivation(event);
+        return false;
+    }.bind(this);
+    element.onmousedown = activation;
+    element.ontouchstart = activation;
 };
 
 LinkedBoxes.prototype.syncNodeSide = function(width, side, isLeft) {
@@ -250,9 +266,11 @@ LinkedBoxes.prototype.syncNodeSide = function(width, side, isLeft) {
             segment.circle = this.createElement('circle', side.group);
             segment.circle.linksPerNode = new Map;
             segment.circle.setAttribute('r', this.config.circleRadius);
+            this.setactivationHandlers(segment.circle);
             segment.label = this.createElement('text', side.group);
             segment.label.setAttribute('text-anchor', (isLeft) ? 'start' : 'end');
             segment.label.textContent = 'undefined';
+            this.setactivationHandlers(segment.label);
         }
         posY = (i+1)*this.config.nodePadding*2;
 
@@ -276,10 +294,12 @@ LinkedBoxes.prototype.syncNode = function(node) {
         this.svg.classList.add('fadeIn');
 
         node.group.onmousedown = function(event) {
-            event.stopPropagation();
-            event.preventDefault();
             this.nodeToDrag = node;
             colaLayout.dragStart(node);
+            return false;
+        }.bind(this);
+        node.group.ontouchstart = function(event) {
+            return node.group.onmousedown(event.touches[0]);
         }.bind(this);
         node.group.onmouseover = colaLayout.mouseOver.bind(colaLayout, node);
         node.group.onmouseout = colaLayout.mouseOut.bind(colaLayout, node);
@@ -294,12 +314,14 @@ LinkedBoxes.prototype.syncNode = function(node) {
             node.circle.y = Math.round(-this.config.nodePadding);
             node.circle.setAttribute('cy', node.circle.y);
             node.circle.setAttribute('r', this.config.circleRadius);
+            this.setactivationHandlers(node.circle);
         }
 
         node.label = this.createElement('text', node.group);
         node.label.setAttribute('text-anchor', 'middle');
         node.label.setAttribute('y', Math.round(this.config.nodePadding+this.config.fontSize*0.4));
         node.label.textContent = 'undefined';
+        this.setactivationHandlers(node.label);
 
         node.leftSide.group = this.createElement('g', node.group);
         node.rightSide.group = this.createElement('g', node.group);
@@ -469,6 +491,8 @@ LinkedBoxes.prototype.syncGraph = function() {
     if(!this.dirtyFlag)
         return;
     this.dirtyFlag = false;
+    rect = this.svg.getBoundingClientRect();
+    this.layoutEngine.size([rect.width, rect.height]);
     this.layoutEngine.start();
     this.tickGraph();
 };

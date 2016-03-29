@@ -1,6 +1,6 @@
-var colaLayout = cola.Layout;
+var colaLayout = require('webcola').Layout;
 
-function LinkedBoxes(parentElement) {
+module.exports = function(parentElement) {
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     parentElement.appendChild(this.svg);
     this.svg.parentNode.classList.add('LinkedBoxes');
@@ -68,7 +68,7 @@ function LinkedBoxes(parentElement) {
     this.links = new Set;
 };
 
-LinkedBoxes.prototype.config = {
+module.exports.prototype.config = {
     nodeMargin: 24,
     nodePadding: 12,
     nodeCornerRadius: 10,
@@ -79,7 +79,7 @@ LinkedBoxes.prototype.config = {
     segmentLines: true
 };
 
-LinkedBoxes.prototype.deleteCircle = function(circle) {
+module.exports.prototype.deleteCircle = function(circle) {
     if(this.cursorCircle == circle)
         this.cursorNode = undefined;
     for(pair of circle.linksPerNode) {
@@ -89,12 +89,12 @@ LinkedBoxes.prototype.deleteCircle = function(circle) {
     }
 };
 
-LinkedBoxes.prototype.tickCircle = function(posX, posY, element) {
+module.exports.prototype.tickCircle = function(posX, posY, element) {
     element.x = posX+parseInt(element.getAttribute('cx'));
     element.y = posY+parseInt(element.getAttribute('cy'));
 };
 
-LinkedBoxes.prototype.tickGraph = function() {
+module.exports.prototype.tickGraph = function() {
     this.layoutEngine._running = true;
     this.layoutEngine._alpha = 0.1;
     // this.layoutEngine.trigger({type:'start', alpha:this.layoutEngine._alpha});
@@ -178,7 +178,7 @@ LinkedBoxes.prototype.tickGraph = function() {
     this.syncGraph();
 };
 
-LinkedBoxes.prototype.handleKeyboard = function(event) {
+module.exports.prototype.handleKeyboard = function(event) {
     if(!this.cursorNode)
         return;
     if(event.keyCode == 13 && this.cursorCircle.onactivation) {
@@ -234,13 +234,13 @@ LinkedBoxes.prototype.handleKeyboard = function(event) {
     return true;
 };
 
-LinkedBoxes.prototype.createElement = function(tag, parentNode) {
+module.exports.prototype.createElement = function(tag, parentNode) {
     element = document.createElementNS(this.svg.namespaceURI, tag);
     parentNode.appendChild(element);
     return element;
 };
 
-LinkedBoxes.prototype.setactivationHandlers = function(element) {
+module.exports.prototype.setActivationHandlers = function(element) {
     activation = function(event) {
         if(element.onactivation)
             element.onactivation(event);
@@ -250,7 +250,7 @@ LinkedBoxes.prototype.setactivationHandlers = function(element) {
     element.ontouchstart = activation;
 };
 
-LinkedBoxes.prototype.syncNodeSide = function(width, side, isLeft) {
+module.exports.prototype.syncNodeSide = function(width, side, isLeft) {
     for(var i = 0; i < side.length; ++i) {
         segment = side[i];
         if(segment.deathFlag) {
@@ -266,11 +266,11 @@ LinkedBoxes.prototype.syncNodeSide = function(width, side, isLeft) {
             segment.circle = this.createElement('circle', side.group);
             segment.circle.linksPerNode = new Map;
             segment.circle.setAttribute('r', this.config.circleRadius);
-            this.setactivationHandlers(segment.circle);
+            this.setActivationHandlers(segment.circle);
             segment.label = this.createElement('text', side.group);
             segment.label.setAttribute('text-anchor', (isLeft) ? 'start' : 'end');
             segment.label.textContent = 'undefined';
-            this.setactivationHandlers(segment.label);
+            this.setActivationHandlers(segment.label);
         }
         posY = (i+1)*this.config.nodePadding*2;
 
@@ -284,7 +284,7 @@ LinkedBoxes.prototype.syncNodeSide = function(width, side, isLeft) {
     }
 };
 
-LinkedBoxes.prototype.syncNode = function(node) {
+module.exports.prototype.syncNode = function(node) {
     segmentCount = Math.max(node.leftSide.length, node.rightSide.length);
     width = 200;
     height = (segmentCount+1)*this.config.nodePadding*2;
@@ -314,14 +314,14 @@ LinkedBoxes.prototype.syncNode = function(node) {
             node.circle.y = Math.round(-this.config.nodePadding);
             node.circle.setAttribute('cy', node.circle.y);
             node.circle.setAttribute('r', this.config.circleRadius);
-            this.setactivationHandlers(node.circle);
+            this.setActivationHandlers(node.circle);
         }
 
         node.label = this.createElement('text', node.group);
         node.label.setAttribute('text-anchor', 'middle');
         node.label.setAttribute('y', Math.round(this.config.nodePadding+this.config.fontSize*0.4));
         node.label.textContent = 'undefined';
-        this.setactivationHandlers(node.label);
+        this.setActivationHandlers(node.label);
 
         node.leftSide.group = this.createElement('g', node.group);
         node.rightSide.group = this.createElement('g', node.group);
@@ -357,7 +357,7 @@ LinkedBoxes.prototype.syncNode = function(node) {
     return node;
 };
 
-LinkedBoxes.prototype.initializeNode = function(node) {
+module.exports.prototype.initializeNode = function(node) {
     node.sharedLinksPerNode = new Map;
     this.syncNode(node);
     this.nodes.push(node);
@@ -365,7 +365,7 @@ LinkedBoxes.prototype.initializeNode = function(node) {
     return node;
 };
 
-LinkedBoxes.prototype.createNodeHelper = function(segementsLeft, segementsRight) {
+module.exports.prototype.createNodeHelper = function(segementsLeft, segementsRight) {
     node = {};
     node.leftSide = Array(segementsLeft);
     for(var i = 0; i < segementsLeft; ++i)
@@ -376,7 +376,7 @@ LinkedBoxes.prototype.createNodeHelper = function(segementsLeft, segementsRight)
     return this.initializeNode(node);
 };
 
-LinkedBoxes.prototype.hasCircleAtIndex = function(node, index) {
+module.exports.prototype.hasCircleAtIndex = function(node, index) {
     if(index < 0)
         return node.leftSide[-index-1] != undefined;
     else if(index > 0)
@@ -385,7 +385,7 @@ LinkedBoxes.prototype.hasCircleAtIndex = function(node, index) {
         return node.circle != undefined;
 };
 
-LinkedBoxes.prototype.getCircleAtIndex = function(node, index) {
+module.exports.prototype.getCircleAtIndex = function(node, index) {
     if(index < 0)
         return node.leftSide[-index-1].circle;
     else if(index > 0)
@@ -394,7 +394,7 @@ LinkedBoxes.prototype.getCircleAtIndex = function(node, index) {
         return node.circle;
 };
 
-LinkedBoxes.prototype.getIndexOfCircle = function(node, circle) {
+module.exports.prototype.getIndexOfCircle = function(node, circle) {
     if(node.circle == circle)
         return 0;
     for(var i = 0; i < node.leftSide.length; ++i)
@@ -406,7 +406,7 @@ LinkedBoxes.prototype.getIndexOfCircle = function(node, circle) {
     return undefined;
 };
 
-LinkedBoxes.prototype.linkNodes = function(srcNode, dstNode) {
+module.exports.prototype.linkNodes = function(srcNode, dstNode) {
     entry = srcNode.sharedLinksPerNode.get(dstNode);
     if(entry)
         ++entry.arc;
@@ -417,7 +417,7 @@ LinkedBoxes.prototype.linkNodes = function(srcNode, dstNode) {
     return entry;
 };
 
-LinkedBoxes.prototype.unlinkNodes = function(srcNode, dstNode) {
+module.exports.prototype.unlinkNodes = function(srcNode, dstNode) {
     entry = srcNode.sharedLinksPerNode.get(dstNode);
     if(entry.arc > 1)
         --entry.arc;
@@ -428,7 +428,7 @@ LinkedBoxes.prototype.unlinkNodes = function(srcNode, dstNode) {
     }
 };
 
-LinkedBoxes.prototype.linkCircle = function(link, srcCircle, dstNode) {
+module.exports.prototype.linkCircle = function(link, srcCircle, dstNode) {
     set = undefined;
     if(!srcCircle.linksPerNode.has(dstNode)) {
         set = new Set;
@@ -442,7 +442,7 @@ LinkedBoxes.prototype.linkCircle = function(link, srcCircle, dstNode) {
     return true;
 };
 
-LinkedBoxes.prototype.unlinkCircle = function(link, srcCircle, dstNode) {
+module.exports.prototype.unlinkCircle = function(link, srcCircle, dstNode) {
     if(!srcCircle.linksPerNode.has(dstNode))
         return false;
     set = srcCircle.linksPerNode.get(dstNode);
@@ -454,7 +454,7 @@ LinkedBoxes.prototype.unlinkCircle = function(link, srcCircle, dstNode) {
     return true;
 };
 
-LinkedBoxes.prototype.initializeLink = function(link) {
+module.exports.prototype.initializeLink = function(link) {
     if(!this.linkCircle(link, link.srcCircle, link.dstNode))
         return;
     this.linkCircle(link, link.dstCircle, link.srcNode);
@@ -473,12 +473,12 @@ LinkedBoxes.prototype.initializeLink = function(link) {
     return link;
 };
 
-LinkedBoxes.prototype.delete = function(element) {
+module.exports.prototype.delete = function(element) {
     element.deathFlag = true;
     this.dirtyFlag = true;
 };
 
-LinkedBoxes.prototype.createLinkHelper = function(srcNode, dstNode, srcIndex, dstIndex) {
+module.exports.prototype.createLinkHelper = function(srcNode, dstNode, srcIndex, dstIndex) {
     link = {};
     link.srcNode = srcNode;
     link.dstNode = dstNode;
@@ -487,7 +487,7 @@ LinkedBoxes.prototype.createLinkHelper = function(srcNode, dstNode, srcIndex, ds
     return this.initializeLink(link);
 };
 
-LinkedBoxes.prototype.syncGraph = function() {
+module.exports.prototype.syncGraph = function() {
     if(!this.dirtyFlag)
         return;
     this.dirtyFlag = false;
@@ -497,7 +497,7 @@ LinkedBoxes.prototype.syncGraph = function() {
     this.tickGraph();
 };
 
-LinkedBoxes.prototype.setCursorCircle = function(circle) {
+module.exports.prototype.setCursorCircle = function(circle) {
     if(this.cursorCircle)
         this.cursorCircle.classList.remove('cursor');
     this.cursorCircle = circle;
@@ -505,14 +505,14 @@ LinkedBoxes.prototype.setCursorCircle = function(circle) {
         this.cursorCircle.classList.add('cursor');
 };
 
-LinkedBoxes.prototype.setCursorIndex = function(index) {
+module.exports.prototype.setCursorIndex = function(index) {
     if(!this.cursorNode || !this.hasCircleAtIndex(this.cursorNode, index))
         return false;
     this.setCursorCircle(this.getCircleAtIndex(this.cursorNode, index));
     return true;
 };
 
-LinkedBoxes.prototype.cursorFollowLink = function() {
+module.exports.prototype.cursorFollowLink = function() {
     if(!this.cursorNode || this.cursorCircle.linksPerNode.size != 1)
         return false;
     set = this.cursorCircle.linksPerNode.values().next().value;

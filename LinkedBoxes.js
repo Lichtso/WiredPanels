@@ -1,4 +1,6 @@
-var colaLayout = require('webcola').Layout;
+'use strict';
+
+const colaLayout = require('webcola').Layout;
 
 module.exports = function(parentElement) {
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -8,7 +10,7 @@ module.exports = function(parentElement) {
     this.svg.parentNode.onmousemove = function(event) {
         if(!this.nodeToDrag)
             return true;
-        rect = this.svg.getBoundingClientRect();
+        const rect = this.svg.getBoundingClientRect();
         this.nodeToDrag.px = event.pageX-rect.left-window.pageXOffset+this.config.nodeMargin/2;
         this.nodeToDrag.py = event.pageY-rect.top-window.pageYOffset+this.config.nodeMargin/2;
         this.tickGraph();
@@ -28,38 +30,36 @@ module.exports = function(parentElement) {
         return this.svg.parentNode.onmouseup(event.touches[0]);
     }.bind(this);
 
-    svgDefs = this.createElement('defs', this.svg);
-    /* arrowMarker = this.createElement('marker', svgDefs);
+    const svgDefs = this.createElement('defs', this.svg);
+    /* const arrowMarker = this.createElement('marker', svgDefs);
     arrowMarker.setAttribute('id', 'arrowMarker');
     arrowMarker.setAttribute('refX', 6);
     arrowMarker.setAttribute('refY', 3);
     arrowMarker.setAttribute('markerWidth', 7);
     arrowMarker.setAttribute('markerHeight', 6);
     arrowMarker.setAttribute('orient', 'auto');
-    arrowPath = this.createElement('path', arrowMarker);
+    const arrowPath = this.createElement('path', arrowMarker);
     arrowPath.setAttribute('d', 'M0,1L5,3L0,5z'); */
 
-    blurFilter = this.createElement('filter', svgDefs);
+    const blurFilter = this.createElement('filter', svgDefs);
     blurFilter.setAttribute('id', 'blurFilter');
     blurFilter.setAttribute('x', -0.5);
     blurFilter.setAttribute('y', -0.5);
     blurFilter.setAttribute('width', 4);
     blurFilter.setAttribute('height', 4);
-    feGaussianBlur = this.createElement('feGaussianBlur', blurFilter);
+    const feGaussianBlur = this.createElement('feGaussianBlur', blurFilter);
     feGaussianBlur.setAttribute('in', 'SourceGraphic');
     feGaussianBlur.setAttribute('result', 'blur');
     feGaussianBlur.setAttribute('stdDeviation', 3);
-    feComponentTransfer = this.createElement('feComponentTransfer', blurFilter);
+    const feComponentTransfer = this.createElement('feComponentTransfer', blurFilter);
     feComponentTransfer.setAttribute('in', 'blur');
     feComponentTransfer.setAttribute('result', 'brighter');
-    feFunc = this.createElement('feFuncA', feComponentTransfer);
+    const feFunc = this.createElement('feFuncA', feComponentTransfer);
     feFunc.setAttribute('type', 'linear');
     feFunc.setAttribute('slope', 4);
-    feMerge = this.createElement('feMerge', blurFilter);
-    feMergeNode = this.createElement('feMergeNode', feMerge);
-    feMergeNode.setAttribute('in', 'brighter');
-    feMergeNode = this.createElement('feMergeNode', feMerge);
-    feMergeNode.setAttribute('in', 'SourceGraphic');
+    const feMerge = this.createElement('feMerge', blurFilter);
+    this.createElement('feMergeNode', feMerge).setAttribute('in', 'brighter');
+    this.createElement('feMergeNode', feMerge).setAttribute('in', 'SourceGraphic');
 
     this.layoutEngine = new colaLayout()
         .linkDistance(150)
@@ -82,11 +82,9 @@ module.exports.prototype.config = {
 module.exports.prototype.deleteCircle = function(circle) {
     if(this.cursorCircle == circle)
         this.cursorNode = undefined;
-    for(pair of circle.linksPerNode) {
-        set = pair[1];
-        for(link of set)
+    for(const pair of circle.linksPerNode)
+        for(const link of pair[1])
             link.deathFlag = true;
-    }
 };
 
 module.exports.prototype.tickCircle = function(posX, posY, element) {
@@ -98,19 +96,19 @@ module.exports.prototype.tickGraph = function() {
     this.layoutEngine._running = true;
     this.layoutEngine._alpha = 0.1;
     // this.layoutEngine.trigger({type:'start', alpha:this.layoutEngine._alpha});
-    for(var i = 0; i < 5; ++i)
+    for(let i = 0; i < 5; ++i)
         if(this.layoutEngine.tick())
             break;
 
-    trash = new Set;
-    for(var j = 0; j < this.nodes.length; ++j) {
-        node = this.nodes[j];
+    let trash = new Set;
+    for(let j = 0; j < this.nodes.length; ++j) {
+        const node = this.nodes[j];
         if(node.deathFlag) {
             if(node.circle)
                 this.deleteCircle(node.circle);
-            for(var i = 0; i < node.leftSide.length; ++i)
+            for(let i = 0; i < node.leftSide.length; ++i)
                 this.deleteCircle(node.leftSide[i].circle);
-            for(var i = 0; i < node.rightSide.length; ++i)
+            for(let i = 0; i < node.rightSide.length; ++i)
                 this.deleteCircle(node.rightSide[i].circle);
             this.dirtyFlag = true;
             trash.add(node.group);
@@ -118,18 +116,18 @@ module.exports.prototype.tickGraph = function() {
             --j;
             continue;
         }
-        posX = node.x-node.width/2;
-        posY = node.y-node.height/2;
+        const posX = node.x-node.width/2,
+              posY = node.y-node.height/2;
         node.group.setAttribute('transform', 'translate('+posX+', '+posY+')');
         if(node.circle)
             this.tickCircle(posX, posY, node.circle);
-        for(var i = 0; i < node.leftSide.length; ++i)
+        for(let i = 0; i < node.leftSide.length; ++i)
             this.tickCircle(posX, posY, node.leftSide[i].circle);
-        for(var i = 0; i < node.rightSide.length; ++i)
+        for(let i = 0; i < node.rightSide.length; ++i)
             this.tickCircle(posX, posY, node.rightSide[i].circle);
     }
 
-    for(link of this.links) {
+    for(const link of this.links) {
         if(link.deathFlag) {
             this.dirtyFlag = true;
             trash.add(link.path);
@@ -159,20 +157,20 @@ module.exports.prototype.tickGraph = function() {
                     link.path.setAttribute('d', 'M'+link.srcCircle.x+','+link.srcCircle.y+'C'+link.srcCircle.x+','+link.dstCircle.y+' '+link.dstCircle.x+','+link.srcCircle.y+' '+link.dstCircle.x+','+link.dstCircle.y);
             break;
             case 'gravity':
-                diffX = link.dstCircle.x-link.srcCircle.x;
-                maxY = Math.max(link.dstCircle.y, link.srcCircle.y)+20;
+                const diffX = link.dstCircle.x-link.srcCircle.x;
+                const maxY = Math.max(link.dstCircle.y, link.srcCircle.y)+20;
                 link.path.setAttribute('d', 'M'+link.srcCircle.x+','+link.srcCircle.y+'C'+(link.srcCircle.x+diffX*0.25)+','+maxY+' '+(link.srcCircle.x+diffX*0.75)+','+maxY+' '+link.dstCircle.x+','+link.dstCircle.y);
             break;
         }
     }
 
-    for(element of trash) {
+    for(const element of trash) {
         element.classList.remove('fadeIn');
         element.classList.add('fadeOut');
     }
     window.setTimeout(function() {
-        for(element of trash)
-            this.svg.removeChild(element);
+        for(const element of trash)
+            element.parentNode.removeChild(element);
     }.bind(this), 250);
 
     this.syncGraph();
@@ -185,7 +183,7 @@ module.exports.prototype.handleKeyboard = function(event) {
         this.cursorCircle.onactivation(event);
         return false;
     }
-    index = this.getIndexOfCircle(this.cursorNode, this.cursorCircle);
+    const index = this.getIndexOfCircle(this.cursorNode, this.cursorCircle);
     if(index < 0) {
         switch(event.keyCode) {
             case 37:
@@ -235,13 +233,13 @@ module.exports.prototype.handleKeyboard = function(event) {
 };
 
 module.exports.prototype.createElement = function(tag, parentNode) {
-    element = document.createElementNS(this.svg.namespaceURI, tag);
+    const element = document.createElementNS(this.svg.namespaceURI, tag);
     parentNode.appendChild(element);
     return element;
 };
 
 module.exports.prototype.setActivationHandlers = function(element) {
-    activation = function(event) {
+    const activation = function(event) {
         if(element.onactivation)
             element.onactivation(event);
         return false;
@@ -251,8 +249,8 @@ module.exports.prototype.setActivationHandlers = function(element) {
 };
 
 module.exports.prototype.syncNodeSide = function(width, side, isLeft) {
-    for(var i = 0; i < side.length; ++i) {
-        segment = side[i];
+    for(let i = 0; i < side.length; ++i) {
+        const segment = side[i];
         if(segment.deathFlag) {
             this.deleteCircle(segment.circle);
             side.group.removeChild(side.group.childNodes[i*2+1]);
@@ -272,7 +270,7 @@ module.exports.prototype.syncNodeSide = function(width, side, isLeft) {
             segment.label.textContent = 'undefined';
             this.setActivationHandlers(segment.label);
         }
-        posY = (i+1)*this.config.nodePadding*2;
+        const posY = (i+1)*this.config.nodePadding*2;
 
         segment.circle.x = Math.round((isLeft) ? this.config.nodePadding : width-this.config.nodePadding);
         segment.circle.y = Math.round(posY+this.config.nodePadding);
@@ -285,9 +283,9 @@ module.exports.prototype.syncNodeSide = function(width, side, isLeft) {
 };
 
 module.exports.prototype.syncNode = function(node) {
-    segmentCount = Math.max(node.leftSide.length, node.rightSide.length);
-    width = 200;
-    height = (segmentCount+1)*this.config.nodePadding*2;
+    const segmentCount = Math.max(node.leftSide.length, node.rightSide.length);
+    const width = 200;
+    const height = (segmentCount+1)*this.config.nodePadding*2;
 
     if(!node.group) {
         node.group = this.createElement('g', this.svg);
@@ -333,7 +331,7 @@ module.exports.prototype.syncNode = function(node) {
 
     node.rect.setAttribute('width', width);
     node.rect.setAttribute('height', height);
-    halfWidth = Math.round(width/2);
+    const halfWidth = Math.round(width/2);
     if(node.circle)
         node.circle.setAttribute('cx', halfWidth);
     node.label.setAttribute('x', halfWidth);
@@ -341,12 +339,12 @@ module.exports.prototype.syncNode = function(node) {
     this.syncNodeSide(width, node.leftSide, true);
     this.syncNodeSide(width, node.rightSide, false);
     if(node.lines) {
-        for(var i = node.lines.group.childNodes.length-1; i >= segmentCount; --i)
+        for(let i = node.lines.group.childNodes.length-1; i >= segmentCount; --i)
             node.lines.group.removeChild(node.lines.group.childNodes[i]);
         node.lines.splice(segmentCount);
 
-        for(var i = node.lines.group.childNodes.length; i < segmentCount; ++i) {
-            posY = (i+1)*this.config.nodePadding*2;
+        for(let i = node.lines.group.childNodes.length; i < segmentCount; ++i) {
+            const posY = (i+1)*this.config.nodePadding*2;
             node.lines[i] = this.createElement('path', node.lines.group);
             node.lines[i].setAttribute('d', 'M0,'+posY+'h'+width);
         }
@@ -366,12 +364,12 @@ module.exports.prototype.initializeNode = function(node) {
 };
 
 module.exports.prototype.createNodeHelper = function(segementsLeft, segementsRight) {
-    node = {};
+    const node = {};
     node.leftSide = Array(segementsLeft);
-    for(var i = 0; i < segementsLeft; ++i)
+    for(let i = 0; i < segementsLeft; ++i)
         node.leftSide[i] = {};
     node.rightSide = Array(segementsRight);
-    for(var i = 0; i < segementsRight; ++i)
+    for(let i = 0; i < segementsRight; ++i)
         node.rightSide[i] = {};
     return this.initializeNode(node);
 };
@@ -397,17 +395,17 @@ module.exports.prototype.getCircleAtIndex = function(node, index) {
 module.exports.prototype.getIndexOfCircle = function(node, circle) {
     if(node.circle == circle)
         return 0;
-    for(var i = 0; i < node.leftSide.length; ++i)
+    for(let i = 0; i < node.leftSide.length; ++i)
         if(node.leftSide[i].circle == circle)
             return -i-1;
-    for(var i = 0; i < node.rightSide.length; ++i)
+    for(let i = 0; i < node.rightSide.length; ++i)
         if(node.rightSide[i].circle == circle)
             return i+1;
     return undefined;
 };
 
 module.exports.prototype.linkNodes = function(srcNode, dstNode) {
-    entry = srcNode.sharedLinksPerNode.get(dstNode);
+    let entry = srcNode.sharedLinksPerNode.get(dstNode);
     if(entry)
         ++entry.arc;
     else {
@@ -418,7 +416,7 @@ module.exports.prototype.linkNodes = function(srcNode, dstNode) {
 };
 
 module.exports.prototype.unlinkNodes = function(srcNode, dstNode) {
-    entry = srcNode.sharedLinksPerNode.get(dstNode);
+    const entry = srcNode.sharedLinksPerNode.get(dstNode);
     if(entry.arc > 1)
         --entry.arc;
     else {
@@ -429,7 +427,7 @@ module.exports.prototype.unlinkNodes = function(srcNode, dstNode) {
 };
 
 module.exports.prototype.linkCircle = function(link, srcCircle, dstNode) {
-    set = undefined;
+    let set = undefined;
     if(!srcCircle.linksPerNode.has(dstNode)) {
         set = new Set;
         srcCircle.linksPerNode.set(dstNode, set);
@@ -445,7 +443,7 @@ module.exports.prototype.linkCircle = function(link, srcCircle, dstNode) {
 module.exports.prototype.unlinkCircle = function(link, srcCircle, dstNode) {
     if(!srcCircle.linksPerNode.has(dstNode))
         return false;
-    set = srcCircle.linksPerNode.get(dstNode);
+    const set = srcCircle.linksPerNode.get(dstNode);
     if(!set.has(link))
         return false;
     set.delete(link);
@@ -461,7 +459,7 @@ module.exports.prototype.initializeLink = function(link) {
     link.path = this.createElement('path', this.svg);
     link.path.classList.add('link');
     if(link.srcNode != link.dstNode) {
-        entry = this.linkNodes(link.srcNode, link.dstNode);
+        const entry = this.linkNodes(link.srcNode, link.dstNode);
         this.linkNodes(link.dstNode, link.srcNode);
         if(entry.arc == 1) {
             entry.link = {source:link.srcNode, target:link.dstNode};
@@ -479,7 +477,7 @@ module.exports.prototype.delete = function(element) {
 };
 
 module.exports.prototype.createLinkHelper = function(srcNode, dstNode, srcIndex, dstIndex) {
-    link = {};
+    const link = {};
     link.srcNode = srcNode;
     link.dstNode = dstNode;
     link.srcCircle = this.getCircleAtIndex(link.srcNode, srcIndex);
@@ -491,7 +489,7 @@ module.exports.prototype.syncGraph = function() {
     if(!this.dirtyFlag)
         return;
     this.dirtyFlag = false;
-    rect = this.svg.getBoundingClientRect();
+    const rect = this.svg.getBoundingClientRect();
     this.layoutEngine.size([rect.width, rect.height]);
     this.layoutEngine.start();
     this.tickGraph();
@@ -515,10 +513,10 @@ module.exports.prototype.setCursorIndex = function(index) {
 module.exports.prototype.cursorFollowLink = function() {
     if(!this.cursorNode || this.cursorCircle.linksPerNode.size != 1)
         return false;
-    set = this.cursorCircle.linksPerNode.values().next().value;
+    const set = this.cursorCircle.linksPerNode.values().next().value;
     if(set.size != 1)
         return false;
-    link = set.values().next().value;
+    const link = set.values().next().value;
     this.cursorNode = (this.cursorNode == link.srcNode) ? link.dstNode : link.srcNode;
     this.setCursorCircle((this.cursorCircle == link.srcCircle) ? link.dstCircle : link.srcCircle);
     return true;

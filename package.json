@@ -1,11 +1,11 @@
 {
-  "name": "LinkedBoxes",
+  "name": "WiredPanels",
   "version": "0.0.0",
   "authors": [
     "Alexander Meißner"
   ],
-  "description": "Boxes with Bubbles linked by Bezier Curves using Cola.js",
-  "main": "LinkedBoxes.js",
+  "description": "Panels with sockets connected by bezier curve wires using Cola.js",
+  "main": "WiredPanels.js",
   "dependencies": {
     "webcola": "^3.1.3"
   }

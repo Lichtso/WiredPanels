@@ -1,4 +1,4 @@
-# LinkedBoxes
+# WiredPanels
 
 Features:
 - Visualizer
@@ -11,8 +11,8 @@ Features:
 
 Planned:
 - Editor
-- Cursor support for multiple links per bubble
-- Node and link selection
+- Cursor support for multiple wires per socket
+- Panel, socket, wire selection
 - API documentation
 
 Ideas:

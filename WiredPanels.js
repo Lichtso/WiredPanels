@@ -6,10 +6,10 @@
 const colaLayout = require('webcola').Layout;
 
 module.exports = function (parentElement) {
+  document.body.addEventListener('keydown', this.handleKeyboard.bind(this));
   this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   parentElement.appendChild(this.svg);
   this.svg.parentNode.classList.add('WiredPanels');
-  document.body.onkeydown = this.handleKeyboard.bind(this);
   this.svg.parentNode.onmousemove = function (event) {
     if (!this.panelToDrag)
       return true;
@@ -101,7 +101,6 @@ module.exports.prototype.tickSocket = function (posX, posY, element) {
 module.exports.prototype.tickGraph = function () {
   this.layoutEngine._running = true;
   this.layoutEngine._alpha = 0.1;
-  // this.layoutEngine.trigger({type:'start', alpha:this.layoutEngine._alpha});
   for (let i = 0; i < 5; ++i)
     if (this.layoutEngine.tick())
       break;
@@ -148,35 +147,29 @@ module.exports.prototype.tickGraph = function () {
     }
     switch (this.config.wireStyle) {
       case 'straight':
-        wire.path.setAttribute('d', 'M' + wire.srcSocket.x + ',' + wire.srcSocket.y + 'L' + wire.dstSocket.x + ',' +
-          wire.dstSocket.y);
+        wire.path.setAttribute('d', 'M' + wire.srcSocket.x + ',' + wire.srcSocket.y + 'L' + wire.dstSocket.x + ',' + wire.dstSocket.y);
         break;
       case 'vertical':
         wire.path.setAttribute('d', 'M' + wire.srcSocket.x + ',' + wire.srcSocket.y + 'C' + wire.dstSocket.x + ',' +
-          wire.srcSocket.y + ' ' + wire.srcSocket.x + ',' + wire.dstSocket.y + ' ' + wire.dstSocket.x + ',' + wire.dstSocket
-          .y);
+          wire.srcSocket.y + ' ' + wire.srcSocket.x + ',' + wire.dstSocket.y + ' ' + wire.dstSocket.x + ',' + wire.dstSocket.y);
         break;
       case 'horizontal':
         wire.path.setAttribute('d', 'M' + wire.srcSocket.x + ',' + wire.srcSocket.y + 'C' + wire.srcSocket.x + ',' +
-          wire.dstSocket.y + ' ' + wire.dstSocket.x + ',' + wire.srcSocket.y + ' ' + wire.dstSocket.x + ',' + wire.dstSocket
-          .y);
+          wire.dstSocket.y + ' ' + wire.dstSocket.x + ',' + wire.srcSocket.y + ' ' + wire.dstSocket.x + ',' + wire.dstSocket.y);
         break;
       case 'hybrid':
         if (Math.abs(wire.srcSocket.x - wire.dstSocket.x) < Math.abs(wire.srcSocket.y - wire.dstSocket.y))
           wire.path.setAttribute('d', 'M' + wire.srcSocket.x + ',' + wire.srcSocket.y + 'C' + wire.dstSocket.x + ',' +
-            wire.srcSocket.y + ' ' + wire.srcSocket.x + ',' + wire.dstSocket.y + ' ' + wire.dstSocket.x + ',' + wire.dstSocket
-            .y);
+            wire.srcSocket.y + ' ' + wire.srcSocket.x + ',' + wire.dstSocket.y + ' ' + wire.dstSocket.x + ',' + wire.dstSocket.y);
         else
           wire.path.setAttribute('d', 'M' + wire.srcSocket.x + ',' + wire.srcSocket.y + 'C' + wire.srcSocket.x + ',' +
-            wire.dstSocket.y + ' ' + wire.dstSocket.x + ',' + wire.srcSocket.y + ' ' + wire.dstSocket.x + ',' + wire.dstSocket
-            .y);
+            wire.dstSocket.y + ' ' + wire.dstSocket.x + ',' + wire.srcSocket.y + ' ' + wire.dstSocket.x + ',' + wire.dstSocket.y);
         break;
       case 'gravity':
         const diffX = wire.dstSocket.x - wire.srcSocket.x;
         const maxY = Math.max(wire.dstSocket.y, wire.srcSocket.y) + 20;
-        wire.path.setAttribute('d', 'M' + wire.srcSocket.x + ',' + wire.srcSocket.y + 'C' + (wire.srcSocket.x + diffX *
-            0.25) + ',' + maxY + ' ' + (wire.srcSocket.x + diffX * 0.75) + ',' + maxY + ' ' + wire.dstSocket.x +
-          ',' + wire.dstSocket.y);
+        wire.path.setAttribute('d', 'M' + wire.srcSocket.x + ',' + wire.srcSocket.y + 'C' + (wire.srcSocket.x + diffX * 0.25)
+          + ',' + maxY + ' ' + (wire.srcSocket.x + diffX * 0.75) + ',' + maxY + ' ' + wire.dstSocket.x + ',' + wire.dstSocket.y);
         break;
     }
   }

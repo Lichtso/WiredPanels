@@ -11,13 +11,13 @@ Features:
 
 Planned:
 - Editor
+    - Change panel label
+    - Delete/add wires/panels
+    - Undo & Redo
+    - Copy & Paste
 - Cursor support for multiple wires per socket
 - Panel, socket, wire selection
 - API documentation
-
-Ideas:
-- Undo & Redo
-- Copy & Paste
 
 Example:
 [Try online](http://symatem.github.io) with [source code](https://github.com/Symatem/symatem.github.io/blob/master/public/js/SymatemVisualizer.js)

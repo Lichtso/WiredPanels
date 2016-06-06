@@ -6,16 +6,17 @@
 const colaLayout = require('webcola').Layout;
 
 module.exports = function (parentElement) {
+  this.dragging = {};
   document.body.addEventListener('keydown', this.handleKeyboard.bind(this));
   this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   parentElement.appendChild(this.svg);
   this.svg.parentNode.classList.add('WiredPanels');
   this.svg.parentNode.onmousemove = function (event) {
-    if (!this.panelToDrag)
+    if (!this.dragging.panel)
       return true;
-    const rect = this.svg.getBoundingClientRect();
-    this.panelToDrag.px = event.pageX - rect.left - window.pageXOffset + this.config.panelMargin / 2;
-    this.panelToDrag.py = event.pageY - rect.top - window.pageYOffset + this.config.panelMargin / 2;
+    this.transformMousePos(this.dragging.panel, event);
+    this.dragging.panel.px -= this.dragging.px;
+    this.dragging.panel.py -= this.dragging.py;
     this.tickGraph();
     return false;
   }.bind(this);
@@ -23,10 +24,10 @@ module.exports = function (parentElement) {
     return this.svg.parentNode.onmousemove(event.touches[0]);
   }.bind(this);
   this.svg.parentNode.onmouseup = function (event) {
-    if (!this.panelToDrag)
+    if (!this.dragging.panel)
       return true;
-    colaLayout.dragEnd(this.panelToDrag);
-    this.panelToDrag = undefined;
+    colaLayout.dragEnd(this.dragging.panel);
+    this.dragging.panel = undefined;
     return false;
   }.bind(this);
   this.svg.parentNode.ontouchend = function (event) {
@@ -71,6 +72,12 @@ module.exports = function (parentElement) {
     .avoidOverlaps(true);
   this.panels = this.layoutEngine._nodes;
   this.wires = new Set();
+};
+
+module.exports.prototype.transformMousePos = function (object, event) {
+    const rect = this.svg.getBoundingClientRect();
+    object.px = event.pageX - rect.left - window.pageXOffset + this.config.panelMargin / 2;
+    object.py = event.pageY - rect.top - window.pageYOffset + this.config.panelMargin / 2;
 };
 
 module.exports.prototype.config = {
@@ -188,59 +195,57 @@ module.exports.prototype.tickGraph = function () {
 
 module.exports.prototype.handleKeyboard = function (event) {
   const rect = this.svg.getBoundingClientRect();
-  if (!this.cursorPanel || rect.width === 0 || rect.height === 0)
-    return;
-  event.stopPropagation();
+  if (!this.cursorPanel || rect.width === 0 || rect.height === 0 || event.ctrlKey)
+    return false;
+  const index = this.getIndexOfSocket(this.cursorPanel, this.cursorSocket);
   if (event.keyCode == 13 && this.cursorSocket.onactivation) {
     this.cursorSocket.onactivation(event);
-    return false;
-  }
-  const index = this.getIndexOfSocket(this.cursorPanel, this.cursorSocket);
-  if (index < 0) {
+  } else if (index < 0) {
     switch (event.keyCode) {
       case 37:
         this.cursorFollowWire();
-        return false;
+        break;
       case 38:
         this.setCursorIndex(index + 1);
-        return false;
+        break;
       case 39:
         this.setCursorIndex(-index);
-        return false;
+        break;
       case 40:
         this.setCursorIndex(index - 1);
-        return false;
+        break;
     }
   } else if (index > 0) {
     switch (event.keyCode) {
       case 37:
         this.setCursorIndex(-index);
-        return false;
+        break;
       case 38:
         this.setCursorIndex(index - 1);
-        return false;
+        break;
       case 39:
         this.cursorFollowWire();
-        return false;
+        break;
       case 40:
         this.setCursorIndex(index + 1);
-        return false;
+        break;
     }
   } else {
     switch (event.keyCode) {
       case 37:
         this.setCursorIndex(index - 1);
-        return false;
+        break;
       case 38:
         this.cursorFollowWire();
-        return false;
+        break;
       case 39:
         this.setCursorIndex(index + 1);
-        return false;
+        break;
       case 40:
-        return false;
+        break;
     }
   }
+  event.stopPropagation();
   return true;
 };
 
@@ -306,8 +311,11 @@ module.exports.prototype.syncPanel = function (panel) {
     panel.group.classList.add('fadeIn');
 
     panel.group.onmousedown = function (event) {
-      this.panelToDrag = panel;
-      colaLayout.dragStart(panel);
+      this.dragging.panel = panel;
+      this.transformMousePos(this.dragging, event);
+      this.dragging.px -= this.dragging.panel.px;
+      this.dragging.py -= this.dragging.panel.py;
+      colaLayout.dragStart(this.dragging.panel);
       return false;
     }.bind(this);
     panel.group.ontouchstart = function (event) {

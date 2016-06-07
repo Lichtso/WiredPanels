@@ -5,18 +5,17 @@ Features:
 - Box and link rendering
 - Animations
 - Drag and drop
+- Selection
 - Touch event handlers for mobile use
 - [Cola.js](http://marvl.infotech.monash.edu/webcola/) force layout and overlap avoidance
-- Cursor and keyboard controls
 
 Planned:
 - Editor
-    - Change panel label
-    - Delete/add wires/panels
+    - Change labels
+    - Delete/add sockets/wires/panels
     - Undo & Redo
     - Copy & Paste
-- Cursor support for multiple wires per socket
-- Panel, socket, wire selection
+- Cursor and keyboard controls
 - API documentation
 
 Example:

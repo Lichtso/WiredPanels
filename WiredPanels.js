@@ -7,6 +7,11 @@ const colaLayout = require('webcola').Layout;
 
 module.exports = function (parentElement) {
   this.dragging = {};
+  this.selection = {
+    'sockets': new Set(),
+    'wires': new Set(),
+    'panels': new Set()
+  };
   document.body.addEventListener('keydown', this.handleKeyboard.bind(this));
   this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   parentElement.appendChild(this.svg);
@@ -93,8 +98,7 @@ module.exports.prototype.config = {
 };
 
 module.exports.prototype.deleteSocket = function (socket) {
-  if (this.cursorSocket == socket)
-    this.cursorPanel = undefined;
+  this.selection.sockets.delete(socket);
   for (const pair of socket.wiresPerPanel)
     for (const wire of pair[1])
       wire.deathFlag = true;
@@ -116,6 +120,7 @@ module.exports.prototype.tickGraph = function () {
   for (let j = 0; j < this.panels.length; ++j) {
     const panel = this.panels[j];
     if (panel.deathFlag) {
+      this.selection.panels.delete(panel);
       if (panel.socket)
         this.deleteSocket(panel.socket);
       for (let i = 0; i < panel.leftSide.length; ++i)
@@ -141,6 +146,7 @@ module.exports.prototype.tickGraph = function () {
 
   for (const wire of this.wires) {
     if (wire.deathFlag) {
+      this.selection.wires.delete(wire);
       this.dirtyFlag = true;
       trash.add(wire.path);
       this.disconnectSockets(wire, wire.srcSocket, wire.dstPanel);
@@ -195,55 +201,23 @@ module.exports.prototype.tickGraph = function () {
 
 module.exports.prototype.handleKeyboard = function (event) {
   const rect = this.svg.getBoundingClientRect();
-  if (!this.cursorPanel || rect.width === 0 || rect.height === 0 || event.ctrlKey)
+  if (rect.width === 0 || rect.height === 0 || event.ctrlKey)
     return false;
-  const index = this.getIndexOfSocket(this.cursorPanel, this.cursorSocket);
-  if (event.keyCode == 13 && this.cursorSocket.onactivation) {
-    this.cursorSocket.onactivation(event);
-  } else if (index < 0) {
-    switch (event.keyCode) {
-      case 37:
-        this.cursorFollowWire();
-        break;
-      case 38:
-        this.setCursorIndex(index + 1);
-        break;
-      case 39:
-        this.setCursorIndex(-index);
-        break;
-      case 40:
-        this.setCursorIndex(index - 1);
-        break;
-    }
-  } else if (index > 0) {
-    switch (event.keyCode) {
-      case 37:
-        this.setCursorIndex(-index);
-        break;
-      case 38:
-        this.setCursorIndex(index - 1);
-        break;
-      case 39:
-        this.cursorFollowWire();
-        break;
-      case 40:
-        this.setCursorIndex(index + 1);
-        break;
-    }
-  } else {
-    switch (event.keyCode) {
-      case 37:
-        this.setCursorIndex(index - 1);
-        break;
-      case 38:
-        this.cursorFollowWire();
-        break;
-      case 39:
-        this.setCursorIndex(index + 1);
-        break;
-      case 40:
-        break;
-    }
+  // const index = this.getIndexOfSocket(this.cursorPanel, this.cursorSocket);
+  switch (event.keyCode) {
+    case 13:
+      // TODO: For all in selection
+      // if (this.cursorSocket.onactivation)
+      //  this.cursorSocket.onactivation(event);
+      break;
+    case 37:
+      break;
+    case 38:
+      break;
+    case 39:
+      break;
+    case 40:
+      break;
   }
   event.stopPropagation();
   return true;
@@ -255,14 +229,28 @@ module.exports.prototype.createElement = function (tag, parentNode) {
   return element;
 };
 
-module.exports.prototype.setActivationHandlers = function (element) {
+module.exports.prototype.invertSelection = function (event, type, element, node) {
+  if (!event.shiftKey)
+    return false;
+  console.log(type, node);
+  if (this.selection[type].delete(element))
+    node.classList.remove('selected');
+  else {
+    this.selection[type].add(element);
+    node.classList.add('selected');
+  }
+  event.stopPropagation();
+  return true;
+};
+
+module.exports.prototype.setActivationHandlers = function (socket) {
   const activation = function (event) {
-    if (element.onactivation)
-      element.onactivation(event);
+    if (!this.invertSelection(event, 'sockets', socket, socket) && socket.onactivation)
+      socket.onactivation(event);
     return false;
   }.bind(this);
-  element.onmousedown = activation;
-  element.ontouchstart = activation;
+  socket.onmousedown = activation;
+  socket.ontouchstart = activation;
 };
 
 module.exports.prototype.syncPanelSide = function (width, side, isLeft) {
@@ -286,7 +274,6 @@ module.exports.prototype.syncPanelSide = function (width, side, isLeft) {
       segment.label = this.createElement('text', side.group);
       segment.label.setAttribute('text-anchor', (isLeft) ? 'start' : 'end');
       segment.label.textContent = 'undefined';
-      this.setActivationHandlers(segment.label);
     }
     const posY = (i + 1) * this.config.panelPadding * 2;
 
@@ -310,24 +297,27 @@ module.exports.prototype.syncPanel = function (panel) {
     panel.group = this.createElement('g', this.panelsGroup);
     panel.group.classList.add('fadeIn');
 
-    panel.group.onmousedown = function (event) {
+    panel.rect = this.createElement('rect', panel.group);
+    panel.rect.classList.add('panel');
+    panel.rect.setAttribute('rx', this.config.panelCornerRadius);
+    panel.rect.setAttribute('ry', this.config.panelCornerRadius);
+
+    panel.rect.onmousedown = function (event) {
+      if(this.invertSelection(event, 'panels', panel, panel.rect))
+        return true;
       this.dragging.panel = panel;
       this.transformMousePos(this.dragging, event);
       this.dragging.px -= this.dragging.panel.px;
       this.dragging.py -= this.dragging.panel.py;
       colaLayout.dragStart(this.dragging.panel);
-      return false;
+      event.stopPropagation();
+      return true;
     }.bind(this);
-    panel.group.ontouchstart = function (event) {
+    panel.rect.ontouchstart = function (event) {
       return panel.group.onmousedown(event.touches[0]);
     }.bind(this);
-    panel.group.onmouseover = colaLayout.mouseOver.bind(colaLayout, panel);
-    panel.group.onmouseout = colaLayout.mouseOut.bind(colaLayout, panel);
-
-    panel.rect = this.createElement('rect', panel.group);
-    panel.rect.classList.add('panel');
-    panel.rect.setAttribute('rx', this.config.panelCornerRadius);
-    panel.rect.setAttribute('ry', this.config.panelCornerRadius);
+    panel.rect.onmouseover = colaLayout.mouseOver.bind(colaLayout, panel);
+    panel.rect.onmouseout = colaLayout.mouseOut.bind(colaLayout, panel);
 
     if (this.config.headSocket) {
       panel.socket = this.createElement('circle', panel.group);
@@ -399,20 +389,11 @@ module.exports.prototype.createPanelHelper = function (segementsLeft, segementsR
   return this.initializePanel(panel);
 };
 
-module.exports.prototype.hasSocketAtIndex = function (panel, index) {
-  if (index < 0)
-    return panel.leftSide[-index - 1] !== undefined;
-  else if (index > 0)
-    return panel.rightSide[index - 1] !== undefined;
-  else
-    return panel.socket !== undefined;
-};
-
 module.exports.prototype.getSocketAtIndex = function (panel, index) {
   if (index < 0)
-    return panel.leftSide[-index - 1].socket;
+    return panel.leftSide[-index-1].socket;
   else if (index > 0)
-    return panel.rightSide[index - 1].socket;
+    return panel.rightSide[index-1].socket;
   else
     return panel.socket;
 };
@@ -486,6 +467,12 @@ module.exports.prototype.initializeWire = function (wire) {
   wire.path = this.createElement('path', this.wiresGroup);
   wire.path.classList.add('wire');
   wire.path.classList.add('fadeIn');
+  wire.path.onmousedown = function (event) {
+    if(this.invertSelection(event, 'wires', wire, wire.path))
+      return true;
+    event.stopPropagation();
+    return true;
+  }.bind(this);
   if (wire.srcPanel != wire.dstPanel) {
     const entry = this.connectPanels(wire.srcPanel, wire.dstPanel);
     this.connectPanels(wire.dstPanel, wire.srcPanel);
@@ -524,31 +511,4 @@ module.exports.prototype.syncGraph = function () {
   this.layoutEngine.size([rect.width, rect.height]);
   this.layoutEngine.start();
   this.tickGraph();
-};
-
-module.exports.prototype.setCursorSocket = function (socket) {
-  if (this.cursorSocket)
-    this.cursorSocket.classList.remove('cursor');
-  this.cursorSocket = socket;
-  if (socket)
-    this.cursorSocket.classList.add('cursor');
-};
-
-module.exports.prototype.setCursorIndex = function (index) {
-  if (!this.cursorPanel || !this.hasSocketAtIndex(this.cursorPanel, index))
-    return false;
-  this.setCursorSocket(this.getSocketAtIndex(this.cursorPanel, index));
-  return true;
-};
-
-module.exports.prototype.cursorFollowWire = function () {
-  if (!this.cursorPanel || this.cursorSocket.wiresPerPanel.size != 1)
-    return false;
-  const set = this.cursorSocket.wiresPerPanel.values().next().value;
-  if (set.size != 1)
-    return false;
-  const wire = set.values().next().value;
-  this.cursorPanel = (this.cursorPanel == wire.srcPanel) ? wire.dstPanel : wire.srcPanel;
-  this.setCursorSocket((this.cursorSocket == wire.srcSocket) ? wire.dstSocket : wire.srcSocket);
-  return true;
 };

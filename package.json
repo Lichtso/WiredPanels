@@ -1,12 +1,28 @@
 {
   "name": "WiredPanels",
-  "version": "0.0.0",
+  "version": "0.0.0-semantic-release",
   "authors": [
-    "Alexander Meißner"
+    "Alexander Meißner",
+    "Markus Felten"
   ],
+  "license": "MIT",
   "description": "Panels with sockets connected by bezier curve wires using Cola.js",
   "main": "WiredPanels.js",
+  "scripts": {
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+  },
+  "bugs": {
+    "url": "https://github.com/Lichtso/WiredPanels/issues"
+  },
+  "homepage": "https://github.com/Lichtso/WiredPanels#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lichtso/WiredPanels.git"
+  },
   "dependencies": {
     "webcola": "^3.1.3"
+  },
+  "devDependencies": {
+    "semantic-release": "6.3.0"
   }
 }

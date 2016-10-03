@@ -12,12 +12,12 @@
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "bugs": {
-    "url": "https://github.com/Lichtso/WiredPanels/issues"
+    "url": "https://github.com/arlac77/WiredPanels/issues"
   },
-  "homepage": "https://github.com/Lichtso/WiredPanels#readme",
+  "homepage": "https://github.com/arlac77/WiredPanels#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Lichtso/WiredPanels.git"
+    "url": "https://github.com/arlac77/WiredPanels.git"
   },
   "dependencies": {
     "webcola": "^3.1.3"

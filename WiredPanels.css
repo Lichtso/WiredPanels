@@ -19,12 +19,13 @@
 .WiredPanels {
     padding: 0px;
     margin: 0px;
+    overflow: hidden;
     position: relative;
     -moz-user-select: none;
     -webkit-user-select: none;
-    -ms-user-select:none;
-    user-select:none;
-    -o-user-select:none;
+    -ms-user-select: none;
+    user-select: none;
+    -o-user-select: none;
 }
 
 .WiredPanels svg {
@@ -40,11 +41,13 @@
     font-variant: normal;
     fill: white;
     color: white;
+    pointer-events: none;
 }
 
 .WiredPanels .panel {
     stroke-width: 1;
     fill: transparent;
+    pointer-events: all;
 }
 
 .WiredPanels rect.panel.selected {
@@ -58,6 +61,7 @@
 .WiredPanels .socket {
     stroke-width: 2;
     fill: transparent;
+    pointer-events: all;
 }
 
 .WiredPanels .socket.selected {
@@ -82,7 +86,3 @@
 .WiredPanels .selected {
     filter: url(#blurFilter);
 }
-
-/* .LinkedBoxes .arrow {
-    marker-end: url(#arrowMarker);
-} */

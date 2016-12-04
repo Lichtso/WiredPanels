@@ -7,7 +7,7 @@ const colaLayout = require('webcola').Layout;
 
 function isOfType(obj, type) {
 	return Object.prototype.toString.call(obj) === '[object '+type+']';
-};
+}
 
 module.exports = function (parentElement) {
   document.body.addEventListener('keydown', this.handleKeyboard.bind(this));

@@ -14,17 +14,28 @@ module.exports = function (parentElement) {
   this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   parentElement.appendChild(this.svg);
   this.svg.parentNode.classList.add('WiredPanels');
+  this.svg.parentNode.onmousedown = function (event) {
+    this.deselectAll();
+    event.stopPropagation();
+    return true;
+  }.bind(this);
+  this.svg.parentNode.ontouchstart = function (event) {
+    return this.svg.parentNode.onmousedown(event.touches[0]);
+  }.bind(this);
   this.svg.parentNode.onmousemove = function (event) {
     if (!this.dragging)
       return false;
+    this.draggingMoved = true;
     if (isOfType(this.dragging, 'Map')) {
       this.dragging.forEach(function (dragging, node) {
         this.transformPanelMousePos(event, 'p', node, '', dragging);
       }, this);
       this.tickGraph();
     } else if (this.dragging.srcSocket) {
-      if (!this.dragging.path)
+      if (!this.dragging.path) {
         this.initializeWire(this.dragging);
+        this.dragging.path.setAttribute('pointer-events', 'none');
+      }
       const rect = this.svg.getBoundingClientRect();
       this.dragging.dstSocket.circle.x = event.pageX - rect.left - window.pageXOffset;
       this.dragging.dstSocket.circle.y = event.pageY - rect.top - window.pageYOffset;
@@ -62,15 +73,6 @@ module.exports = function (parentElement) {
   this.panelsGroup = this.createElement('g', this.svg);
   this.wiresGroup = this.createElement('g', this.svg);
   const svgDefs = this.createElement('defs', this.svg);
-  /* const arrowMarker = this.createElement('marker', svgDefs);
-  arrowMarker.setAttribute('id', 'arrowMarker');
-  arrowMarker.setAttribute('refX', 6);
-  arrowMarker.setAttribute('refY', 3);
-  arrowMarker.setAttribute('markerWidth', 7);
-  arrowMarker.setAttribute('markerHeight', 6);
-  arrowMarker.setAttribute('orient', 'auto');
-  const arrowPath = this.createElement('path', arrowMarker);
-  arrowPath.setAttribute('d', 'M0,1L5,3L0,5z'); */
 
   const blurFilter = this.createElement('filter', svgDefs);
   blurFilter.setAttribute('id', 'blurFilter');
@@ -123,6 +125,7 @@ module.exports.prototype.config = {
 };
 
 module.exports.prototype.deleteSocket = function (socket) {
+  this.dirtyFlag = true;
   this.selection.sockets.delete(socket);
   for (const pair of socket.wiresPerPanel)
     for (const wire of pair[1])
@@ -179,7 +182,6 @@ module.exports.prototype.tickGraph = function () {
         this.deleteSocket(panel.leftSide[i]);
       for (let i = 0; i < panel.rightSide.length; ++i)
         this.deleteSocket(panel.rightSide[i]);
-      this.dirtyFlag = true;
       trash.add(panel.group);
       this.panels.splice(j, 1);
       --j;
@@ -233,13 +235,22 @@ module.exports.prototype.deleteElements = function (trash) {
 module.exports.prototype.handleKeyboard = function (event) {
   const rect = this.svg.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0 || event.ctrlKey)
-    return false;
-  // const index = this.getIndexOfSocket(this.cursorPanel, this.cursorSocket);
+    return;
+  event.stopPropagation();
+  event.preventDefault();
   switch (event.keyCode) {
+    case 8:
+      this.iterateSelection(function(type, element, node) {
+        if (node.ondeletion)
+          node.ondeletion(type, element, node);
+      });
+      this.deselectAll();
+      break;
     case 13:
-      // TODO: For all in selection
-      // if (this.cursorSocket.onactivation)
-      //  this.cursorSocket.onactivation(event);
+      this.iterateSelection(function(type, element, node) {
+        if (node.onactivation)
+          node.onactivation(type, element, node);
+      });
       break;
     case 37:
       break;
@@ -250,25 +261,14 @@ module.exports.prototype.handleKeyboard = function (event) {
     case 40:
       break;
   }
-  event.stopPropagation();
-  return true;
 };
 
 module.exports.prototype.setHandlers = function (type, element, node) {
-  element.onclick = function (event) {
-    if (event.shiftKey)
-      return true;
-    if (node.onactivation)
-      node.onactivation(event);
-    event.stopPropagation();
-    return true;
-  }.bind(this);
   element.onmousedown = function (event) {
-    if (event.shiftKey) {
+    this.draggingMoved = false;
+    if (event.shiftKey)
       this.setSelected(type, element, node, 'toggle');
-      return true;
-    }
-    switch (type) {
+    else switch (type) {
       case 'panels':
         this.setSelected(type, element, node, true);
         this.dragging = new Map();
@@ -288,6 +288,17 @@ module.exports.prototype.setHandlers = function (type, element, node) {
   }.bind(this);
   element.ontouchstart = function (event) {
     return element.onmousedown(event.touches[0]);
+  }.bind(this);
+  element.onmouseup = function (event) {
+    if (event.shiftKey)
+      return true;
+    if (!this.draggingMoved) {
+      if (node.onactivation)
+        node.onactivation(type, element, node);
+    } else if (this.dragging && this.dragging.path) {
+      if (node.onwireconnect)
+        node.onwireconnect(type, element, node, this.dragging);
+    }
   }.bind(this);
   element.ontouchstop = function (event) {
     return element.onmouseup(event.touches[0]);
@@ -316,17 +327,23 @@ module.exports.prototype.setSelected = function (type, element, node, newValue) 
   return newValue;
 };
 
-/*module.exports.prototype.deselectAll = function () {
+module.exports.prototype.iterateSelection = function (callback) {
   for (let socket of this.selection.sockets)
-    socket.circle.classList.remove('selected');
-  this.selection.sockets.clear();
+    callback('sockets', socket.circle, socket);
   for (let wire of this.selection.wires)
-    wire.path.classList.remove('selected');
-  this.selection.wires.clear();
+    callback('wires', wire.path, wire);
   for (let panel of this.selection.panels)
-    panel.rect.classList.remove('selected');
+    callback('panels', panel.rect, panel);
+};
+
+module.exports.prototype.deselectAll = function () {
+  this.iterateSelection(function(type, element, node) {
+    element.classList.remove('selected');
+  });
+  this.selection.sockets.clear();
+  this.selection.wires.clear();
   this.selection.panels.clear();
-};*/
+};
 
 module.exports.prototype.syncPanelSide = function (width, side, isLeft) {
   for (let i = 0; i < side.length; ++i) {
@@ -364,10 +381,6 @@ module.exports.prototype.syncPanelSide = function (width, side, isLeft) {
 };
 
 module.exports.prototype.syncPanel = function (panel) {
-  const socketCount = Math.max(panel.leftSide.length, panel.rightSide.length);
-  const width = 200;
-  const height = (socketCount + 1) * this.config.panelPadding * 2;
-
   if (!panel.group) {
     panel.group = this.createElement('g', this.panelsGroup);
     panel.group.classList.add('fadeIn');
@@ -408,6 +421,12 @@ module.exports.prototype.syncPanel = function (panel) {
     }
   }
 
+  const width = 200;
+  this.syncPanelSide(width, panel.leftSide, true);
+  this.syncPanelSide(width, panel.rightSide, false);
+
+  const socketCount = Math.max(panel.leftSide.length, panel.rightSide.length);
+  const height = (socketCount + 1) * this.config.panelPadding * 2;
   panel.rect.setAttribute('width', width);
   panel.rect.setAttribute('height', height);
   const halfWidth = Math.round(width / 2);
@@ -415,8 +434,6 @@ module.exports.prototype.syncPanel = function (panel) {
     panel.circle.setAttribute('cx', halfWidth);
   panel.label.setAttribute('x', halfWidth);
 
-  this.syncPanelSide(width, panel.leftSide, true);
-  this.syncPanelSide(width, panel.rightSide, false);
   if (panel.lines) {
     for (let i = panel.lines.group.childNodes.length - 1; i >= socketCount; --i)
       panel.lines.group.removeChild(panel.lines.group.childNodes[i]);

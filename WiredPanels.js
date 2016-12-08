@@ -245,6 +245,7 @@ module.exports.prototype.handleKeyboard = function (event) {
           node.ondeletion(type, element, node);
       });
       this.deselectAll();
+      this.syncGraph();
       break;
     case 13:
       this.iterateSelection(function(type, element, node) {
@@ -345,7 +346,7 @@ module.exports.prototype.deselectAll = function () {
   this.selection.panels.clear();
 };
 
-module.exports.prototype.syncPanelSide = function (width, side, isLeft) {
+module.exports.prototype.syncPanelSide = function (panel, width, side, isLeft) {
   for (let i = 0; i < side.length; ++i) {
     const socket = side[i];
     if (socket.deathFlag) {
@@ -367,6 +368,7 @@ module.exports.prototype.syncPanelSide = function (width, side, isLeft) {
       socket.label.setAttribute('text-anchor', (isLeft) ? 'start' : 'end');
       socket.label.textContent = 'undefined';
       socket.wiresPerPanel = new Map();
+      socket.panel = panel;
     }
     const posY = (i + 1) * this.config.panelPadding * 2;
 
@@ -422,8 +424,8 @@ module.exports.prototype.syncPanel = function (panel) {
   }
 
   const width = 200;
-  this.syncPanelSide(width, panel.leftSide, true);
-  this.syncPanelSide(width, panel.rightSide, false);
+  this.syncPanelSide(panel, width, panel.leftSide, true);
+  this.syncPanelSide(panel, width, panel.rightSide, false);
 
   const socketCount = Math.max(panel.leftSide.length, panel.rightSide.length);
   const height = (socketCount + 1) * this.config.panelPadding * 2;

@@ -8,22 +8,20 @@
 # WiredPanels
 
 Features:
-- Visualizer
-- Box and link rendering
-- Animations
+- Visualizer and rendering
+- [Cola.js](http://marvl.infotech.monash.edu/webcola/) force layout and overlap avoidance
 - Drag and drop
 - Selection
+- Add and remove: Panels, sockets and wires
+- Keyboard controls
 - Touch event handlers for mobile use
-- [Cola.js](http://marvl.infotech.monash.edu/webcola/) force layout and overlap avoidance
+- Animations
 
 Planned:
 - Editor
-    - Change labels
-    - Delete/add sockets/wires/panels
     - Undo & Redo
     - Copy & Paste
-- Cursor and keyboard controls
 - API documentation
 
 Example:
-[Try online](http://symatem.github.io) with [source code](https://github.com/Symatem/symatem.github.io/blob/master/public/js/SymatemVisualizer.js)
+[Try online](http://symatem.github.io) with [source code](https://github.com/Symatem/symatem.github.io/blob/master/public/js/OntologyEditor.js)

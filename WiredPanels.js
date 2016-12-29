@@ -70,16 +70,13 @@ module.exports = function (parentElement) {
     return this.svg.parentNode.onmouseup(event.touches[0]);
   }.bind(this);
 
-  this.panelsGroup = this.createElement('g', this.svg);
-  this.wiresGroup = this.createElement('g', this.svg);
   const svgDefs = this.createElement('defs', this.svg);
-
   const blurFilter = this.createElement('filter', svgDefs);
   blurFilter.setAttribute('id', 'blurFilter');
-  blurFilter.setAttribute('x', -0.5);
-  blurFilter.setAttribute('y', -0.5);
-  blurFilter.setAttribute('width', 4);
-  blurFilter.setAttribute('height', 4);
+  blurFilter.setAttribute('x', -10);
+  blurFilter.setAttribute('y', -10);
+  blurFilter.setAttribute('width', 20);
+  blurFilter.setAttribute('height', 20);
   const feGaussianBlur = this.createElement('feGaussianBlur', blurFilter);
   feGaussianBlur.setAttribute('in', 'SourceGraphic');
   feGaussianBlur.setAttribute('result', 'blur');
@@ -94,6 +91,8 @@ module.exports = function (parentElement) {
   this.createElement('feMergeNode', feMerge).setAttribute('in', 'brighter');
   this.createElement('feMergeNode', feMerge).setAttribute('in', 'SourceGraphic');
 
+  this.panelsGroup = this.createElement('g', this.svg);
+  this.wiresGroup = this.createElement('g', this.svg);
   this.layoutEngine = new colaLayout()
     .linkDistance(this.config.panelDistance)
     .avoidOverlaps(true);
@@ -113,6 +112,7 @@ module.exports.prototype.transformPanelMousePos = function (event, dstPrefix, ds
 };
 
 module.exports.prototype.config = {
+  panelWidth: 300,
   panelDistance: 150,
   panelMargin: 24,
   panelPadding: 12,
@@ -233,8 +233,7 @@ module.exports.prototype.deleteElements = function (trash) {
 };
 
 module.exports.prototype.handleKeyboard = function (event) {
-  const rect = this.svg.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0 || event.ctrlKey)
+  if (this.svg.parentNode.querySelector(':hover') == null || event.ctrlKey)
     return;
   event.stopPropagation();
   event.preventDefault();
@@ -366,7 +365,6 @@ module.exports.prototype.syncPanelSide = function (panel, width, side, isLeft) {
       this.setHandlers('sockets', socket.circle, socket);
       socket.label = this.createElement('text', side.group);
       socket.label.setAttribute('text-anchor', (isLeft) ? 'start' : 'end');
-      socket.label.textContent = 'undefined';
       socket.wiresPerPanel = new Map();
       socket.panel = panel;
     }
@@ -423,15 +421,14 @@ module.exports.prototype.syncPanel = function (panel) {
     }
   }
 
-  const width = 200;
-  this.syncPanelSide(panel, width, panel.leftSide, true);
-  this.syncPanelSide(panel, width, panel.rightSide, false);
+  this.syncPanelSide(panel, this.config.panelWidth, panel.leftSide, true);
+  this.syncPanelSide(panel, this.config.panelWidth, panel.rightSide, false);
 
   const socketCount = Math.max(panel.leftSide.length, panel.rightSide.length);
   const height = (socketCount + 1) * this.config.panelPadding * 2;
-  panel.rect.setAttribute('width', width);
+  panel.rect.setAttribute('width', this.config.panelWidth);
   panel.rect.setAttribute('height', height);
-  const halfWidth = Math.round(width / 2);
+  const halfWidth = Math.round(this.config.panelWidth / 2);
   if (panel.circle)
     panel.circle.setAttribute('cx', halfWidth);
   panel.label.setAttribute('x', halfWidth);
@@ -444,11 +441,12 @@ module.exports.prototype.syncPanel = function (panel) {
     for (let i = panel.lines.group.childNodes.length; i < socketCount; ++i) {
       const posY = (i + 1) * this.config.panelPadding * 2;
       panel.lines[i] = this.createElement('path', panel.lines.group);
-      panel.lines[i].setAttribute('d', 'M0,' + posY + 'h' + width);
+      panel.lines[i].setAttribute('d', 'M0,' + posY + 'h' + this.config.panelWidth);
+      panel.lines[i].classList.add('noHover');
     }
   }
 
-  panel.width = width + this.config.panelMargin;
+  panel.width = this.config.panelWidth + this.config.panelMargin;
   panel.height = height + this.config.panelMargin;
   return panel;
 };

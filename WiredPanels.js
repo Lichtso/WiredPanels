@@ -1,6 +1,5 @@
 /* jslint node: true, esnext: true */
 /* global document, window */
-
 'use strict';
 
 const colaLayout = require('webcola').Layout;
@@ -233,7 +232,7 @@ module.exports.prototype.deleteElements = function (trash) {
 };
 
 module.exports.prototype.handleKeyboard = function (event) {
-  if (this.svg.parentNode.querySelector(':hover') == null || event.ctrlKey)
+  if (this.svg.parentNode.querySelector('svg:hover') == null || event.ctrlKey)
     return;
   event.stopPropagation();
   event.preventDefault();
@@ -391,6 +390,7 @@ module.exports.prototype.syncPanel = function (panel) {
     panel.rect.setAttribute('rx', this.config.panelCornerRadius);
     panel.rect.setAttribute('ry', this.config.panelCornerRadius);
 
+    panel.panel = panel;
     this.setHandlers('panels', panel.rect, panel);
     panel.rect.onmouseover = colaLayout.mouseOver.bind(colaLayout, panel);
     panel.rect.onmouseout = colaLayout.mouseOut.bind(colaLayout, panel);

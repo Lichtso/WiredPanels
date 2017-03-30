@@ -19,9 +19,7 @@
     "type": "git",
     "url": "https://github.com/arlac77/WiredPanels.git"
   },
-  "dependencies": {
-    "webcola": "^3.3.0"
-  },
+  "dependencies": { },
   "devDependencies": {
     "semantic-release": "^6.3.1"
   }

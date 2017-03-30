@@ -9,7 +9,7 @@
 
 Features:
 - Visualizer and rendering
-- [Cola.js](http://marvl.infotech.monash.edu/webcola/) force layout and overlap avoidance
+- Force layout and overlap avoidance
 - Drag and drop
 - Selection
 - Add and remove: Panels, sockets and wires

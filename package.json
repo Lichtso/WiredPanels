@@ -7,7 +7,8 @@
   ],
   "license": "MIT",
   "description": "Panels with sockets connected by bezier curve wires using Cola.js",
-  "main": "WiredPanels.js",
+  "main": "dist/WiredPanels.js",
+  "module": "src/WiredPanels.js",
   "scripts": {
     "semantic-release": "semantic-release pre && npm publish && semantic-release post",
     "cover": "nyc ava",
@@ -15,7 +16,7 @@
     "test": "ava",
     "pretest": "rollup -c rollup.config.test.js",
     "posttest": "markdown-doctest",
-    "prepublish": "rollup --output=WiredPanels.js -c -- {{module}}",
+    "prepublish": "rollup --output=dist/WiredPanels.js -c -- src/WiredPanels.js",
     "docs": "jsdoc2md -l off -t doc/README.hbs -f src/*.js >README.md"
   },
   "bugs": {
@@ -45,12 +46,10 @@
   "keywords": [
     "npm-package-template"
   ],
-  "contributors": [
-    {
-      "name": "Markus Felten",
-      "email": "markus.felten@gmx.de"
-    }
-  ],
+  "contributors": [{
+    "name": "Markus Felten",
+    "email": "markus.felten@gmx.de"
+  }],
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"

@@ -9,7 +9,14 @@
   "description": "Panels with sockets connected by bezier curve wires using Cola.js",
   "main": "WiredPanels.js",
   "scripts": {
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post",
+    "cover": "nyc ava",
+    "precover": "rollup -c rollup.config.test.js",
+    "test": "ava",
+    "pretest": "rollup -c rollup.config.test.js",
+    "posttest": "markdown-doctest",
+    "prepublish": "rollup --output=WiredPanels.js -c -- {{module}}",
+    "docs": "jsdoc2md -l off -t doc/README.hbs -f src/*.js >README.md"
   },
   "bugs": {
     "url": "https://github.com/arlac77/WiredPanels/issues"
@@ -19,8 +26,57 @@
     "type": "git",
     "url": "https://github.com/arlac77/WiredPanels.git"
   },
-  "dependencies": { },
+  "dependencies": {},
   "devDependencies": {
-    "semantic-release": "^6.3.1"
+    "semantic-release": "^6.3.6",
+    "ava": "^0.19.1",
+    "babel-preset-es2015-rollup": "^3.0.0",
+    "cz-conventional-changelog": "^2.0.0",
+    "jsdoc-to-markdown": "^3.0.0",
+    "markdown-doctest": "^0.9.1",
+    "nyc": "^10.2.0",
+    "rollup": "^0.41.6",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-multi-entry": "^2.0.1"
+  },
+  "engines": {
+    "node": ">=7.9.0"
+  },
+  "keywords": [
+    "npm-package-template"
+  ],
+  "contributors": [
+    {
+      "name": "Markus Felten",
+      "email": "markus.felten@gmx.de"
+    }
+  ],
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "ava": {
+    "files": [
+      "build/test-bundle.js"
+    ],
+    "require": [
+      "babel-register"
+    ]
+  },
+  "nyc": {
+    "include": [
+      "build/test-bundle.js",
+      "src/**/*.js"
+    ],
+    "reporter": [
+      "lcov"
+    ],
+    "report-dir": "./coverage"
+  },
+  "template": {
+    "repository": {
+      "url": "https://github.com/arlac77/npm-package-template.git"
+    }
   }
 }

@@ -1,13 +1,14 @@
 // karma.conf.js
-module.exports = function (config) {
+module.exports = (config) => {
   config.set({
+    frameworks: ['mocha', 'chai', 'fixture'],
     files: [
-      'dist/WiredPanels.js',
-      'tests/*test.js'
+      'build/test-bundle.js',
+      'tests/*.js',
+      'tests/*.html'
     ],
 
     browsers: ['Chrome', 'Chrome_without_security'], // You may use 'ChromeCanary' or 'Chromium' as well
-
 
     // you can define custom flags
     customLaunchers: {

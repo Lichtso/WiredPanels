@@ -12,7 +12,7 @@
   "scripts": {
     "semantic-release": "semantic-release pre && npm publish && semantic-release post",
     "precover": "rollup -c rollup.config.test.js",
-    "test": "./node_modules/karma/bin/karma start karma.conf.js",
+    "test": "./node_modules/karma/bin/karma start tests/karma.conf.js",
     "pretest": "rollup -c rollup.config.test.js",
     "prepublish": "rollup --output=dist/WiredPanels.js -c -- src/WiredPanels.js"
   },
@@ -28,13 +28,13 @@
   "devDependencies": {
     "babel-preset-es2015-rollup": "^3.0.0",
     "chai": "^3.5.0",
-    "jasmine-core": "^2.5.2",
+    "jasmine-core": "^2.6.1",
     "karma": "^1.6.0",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^2.0.0",
     "karma-fixture": "^0.2.6",
     "karma-mocha": "^1.3.0",
-    "mocha": "^3.2.0",
+    "mocha": "^3.3.0",
     "rollup": "^0.41.6",
     "rollup-plugin-babel": "^2.7.1",
     "rollup-plugin-multi-entry": "^2.0.1",

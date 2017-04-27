@@ -1,15 +1,11 @@
-/* global document, window , fixture */
+/* global document, window , fixture, it, describe, beforeEach, afterEach */
+/* jslint node: true, esnext: true */
 
 'use strict';
 
-/*
- * Unit tests for lib/calculator.js
- */
-
 describe('Calculator', function () {
 
-  // API for interacting with the page.
-  var controls = {
+  const controls = {
     get result() {
       return document.getElementById('result').innerHTML;
     },
@@ -31,39 +27,35 @@ describe('Calculator', function () {
   };
 
   // inject the HTML fixture for the tests
-  beforeEach(function () {
+  beforeEach(() => {
     // Why this line? See: https://github.com/billtrik/karma-fixture/issues/3
-    fixture.base = 'tests';
+    fixture.base = './'; // 'tests';
     fixture.load('simple.fixture.html');
 
     // init js lib
     window.calculator.init();
   });
 
-  // remove the html fixture from the DOM
-  afterEach(function () {
-    fixture.cleanup();
-  });
+  afterEach(() => fixture.cleanup());
 
-  it('should calculate 3 for 1 + 2', function () {
+  it('should calculate 3 for 1 + 2', () => {
     controls.x = 1;
     controls.y = 2;
     controls.clickAdd();
     controls.result.should.equal('3');
   });
 
-  it('should calculate zero for invalid x value', function () {
+  it('should calculate zero for invalid x value', () => {
     controls.x = 'hello';
     controls.y = 2;
     controls.clickAdd();
     controls.result.should.equal('0');
   });
 
-  it('should calculate zero for invalid y value', function () {
+  it('should calculate zero for invalid y value', () => {
     controls.x = 1;
     controls.y = 'goodbye';
     controls.clickAdd();
     controls.result.should.equal('0');
   });
-
 });

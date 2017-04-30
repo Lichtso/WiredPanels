@@ -2,11 +2,9 @@
 
 module.exports = (config) => {
   config.set({
-    frameworks: ['mocha', 'chai', 'fixture'],
+    frameworks: ['jasmine'],
     files: [
-      '../build/test-bundle.js',
-      '*.js',
-      '*.html'
+      '../build/test-bundle.js'
     ],
 
     browsers: ['Chrome']

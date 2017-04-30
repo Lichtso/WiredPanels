@@ -1,21 +1,22 @@
 /* jslint node: true, esnext: true */
 
 import babel from 'rollup-plugin-babel';
-import multiEntry from 'rollup-plugin-multi-entry';
+//import multiEntry from 'rollup-plugin-multi-entry';
 
 export default {
-  entry: 'tests/**/*.test.js',
-  external: ['ava'],
+  entry: 'tests/simple.test.js',
+  external: [],
   plugins: [
-    babel({
+    /*babel({
       babelrc: false,
       presets: ['es2015-rollup'],
       exclude: 'node_modules/**'
-    }),
-    multiEntry()
+    })*/
+    /*,
+       multiEntry()*/
   ],
   moduleName: 'XXX',
-  format: 'umd',
+  format: 'iife',
   dest: 'build/test-bundle.js',
   sourceMap: true
 };

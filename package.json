@@ -21,6 +21,6 @@
   },
   "dependencies": { },
   "devDependencies": {
-    "semantic-release": "^7.0.2"
+    "semantic-release": "^8.0.0"
   }
 }

@@ -7,6 +7,8 @@
 
 # WiredPanels
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/arlac77/WiredPanels.svg)](https://greenkeeper.io/)
+
 Features:
 - Visualizer and rendering
 - Force layout and overlap avoidance

@@ -6,24 +6,29 @@
 [![downloads](http://img.shields.io/npm/dm/WiredPanels.svg?style=flat-square)](https://npmjs.org/package/WiredPanels)
 
 # WiredPanels
-
 [![Greenkeeper badge](https://badges.greenkeeper.io/arlac77/WiredPanels.svg)](https://greenkeeper.io/)
 
 Features:
-- Visualizer and rendering
+- Framework to build an Editor or Visualizer
+- Rendering: SVG + CSS animations
 - Force layout and overlap avoidance
-- Drag and drop
-- Selection
-- Add and remove: Panels, sockets and wires
+- Elements: Panels, sockets and wires
+- Mouse controls
+    - Move panels
+    - Drag / draw wires
+    - Selection
 - Keyboard controls
+    - Enter: Use / Activate
+    - Backspace: Delete
+    - Meta (+ Shift) + Z: Undo & Redo
 - Touch event handlers for mobile use
-- Animations
 
 Planned:
-- Editor
-    - Undo & Redo
-    - Copy & Paste
-- API documentation
+- Clipboard
+    - https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+    - https://developer.mozilla.org/en-US/docs/Web/API/ClipboardEvent
+    - https://developer.mozilla.org/en-US/docs/Web/API/File
+- Better API & documentation
 
 Example:
-[Try online](http://symatem.github.io) with [source code](https://github.com/Symatem/symatem.github.io/blob/master/public/js/OntologyEditor.js)
+[Try online](http://symatem.github.io) with [source code](https://github.com/Symatem/symatem.github.io/blob/master/js/OntologyEditor.js)

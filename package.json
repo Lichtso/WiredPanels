@@ -6,8 +6,8 @@
     "Markus Felten"
   ],
   "license": "MIT",
-  "description": "Panels with sockets connected by bezier curve wires using Cola.js",
-  "main": "WiredPanels.js",
+  "description": "Panels with sockets connected by bezier curve wires",
+  "module": "WiredPanels.js",
   "scripts": {
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },

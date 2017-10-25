@@ -40,7 +40,7 @@
     transition: stroke-width 0.15s, stroke-opacity 0.15s;
 }
 
-.WiredPanels text,.noHover {
+.WiredPanels .label,.noHover {
     pointer-events: none;
 }
 

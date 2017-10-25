@@ -3,66 +3,106 @@ export default function module(parentElement) {
         parentElement.removeChild(parentElement.getElementsByClassName('fallback')[0]);
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     parentElement.appendChild(this.svg);
-    document.body.addEventListener('keydown', this.handleKeyboard.bind(this));
     this.svg.classList.add('WiredPanels');
-    this.svg.onmousedown = function(event) {
+
+    document.body.addEventListener('keydown', function(event) {
+        if(this.svg.parentNode.querySelector('svg:hover') == null || event.ctrlKey)
+            return;
+        switch(event.keyCode) {
+            case 8: // Backspace
+                for(let node of this.selection)
+                    if(node.ondeletion)
+                        node.ondeletion(node);
+                this.deselectAll();
+                this.syncGraph();
+                break;
+            case 13: // Enter
+                for(let node of this.selection)
+                    if(node.onactivation)
+                        node.onactivation(node);
+                break;
+            case 90: // Meta (+ Shift) + Z
+                if(!event.metaKey)
+                    return;
+                if(event.shiftKey) {
+                    if(this.actionIndex < this.actionStack.length)
+                        this.actionStack[this.actionIndex++](true);
+                } else {
+                    if(this.actionIndex > 0)
+                        this.actionStack[--this.actionIndex](false);
+                }
+                break;
+            default:
+                return;
+        }
+        event.stopPropagation();
+        event.preventDefault();
+    }.bind(this));
+
+    const mousedown = function(event) {
+        this.draggingMoved = false;
         this.deselectAll();
         event.stopPropagation();
-        return true;
+        event.preventDefault();
     }.bind(this);
-    this.svg.ontouchstart = function(event) {
-        return this.svg.onmousedown(event.touches[0]);
-    }.bind(this);
-    this.svg.onmousemove = function(event) {
+    this.svg.addEventListener('mousedown', mousedown);
+    this.svg.addEventListener('touchstart', function(event) {
+        return mousedown(event.touches[0]);
+    });
+
+    const mousemove = function(event) {
         if(!this.dragging)
-            return false;
+            return;
         this.draggingMoved = true;
         const rect = this.svg.getBoundingClientRect(),
-            mouseX = event.pageX - rect.left - window.pageXOffset,
-            mouseY = event.pageY - rect.top - window.pageYOffset;
+              mouseX = event.pageX - rect.left - window.pageXOffset,
+              mouseY = event.pageY - rect.top - window.pageYOffset;
         if(this.dragging.srcSocket) {
-            if(!this.dragging.path) {
-                this.initializeWire(this.dragging);
-                this.dragging.path.setAttribute('pointer-events', 'none');
+            if(this.dragging.type != 'wire') {
+                this.createWire(this.dragging);
+                this.dragging.path.classList.add('noHover');
             }
             this.dragging.dstSocket.circle.x = mouseX;
             this.dragging.dstSocket.circle.y = mouseY;
             this.tickWire(this.dragging);
         } else {
-            this.dragging.forEach(function(dragging, node) {
-                node.x = mouseX - dragging.x;
-                node.y = mouseY - dragging.y;
+            this.dragging.forEach(function(dragging, panel) {
+                panel.x = mouseX - dragging.x;
+                panel.y = mouseY - dragging.y;
             }, this);
             this.stabilizeGraph();
         }
         event.stopPropagation();
-        return true;
+        event.preventDefault();
     }.bind(this);
-    this.svg.ontouchmove = function(event) {
-        return this.svg.onmousemove(event.touches[0]);
-    }.bind(this);
-    this.svg.onmouseup = function(event) {
+    this.svg.addEventListener('mousemove', mousemove);
+    this.svg.addEventListener('touchmove', function(event) {
+        return mousemove(event.touches[0]);
+    });
+
+    const mouseup = function(event) {
         if(!this.dragging)
-            return false;
-        if(this.dragging.path) {
-            this.selection.wires.delete(this.dragging);
+            return;
+        if(this.dragging.type == 'wire') {
+            this.selection.delete(this.dragging);
             this.wires.delete(this.dragging);
-            this.deleteElements([this.dragging.path]);
+            deleteElements([this.dragging.path]);
         } else {
-            for(let panel of this.selection.panels)
-                panel.rect.classList.remove('selected');
-            this.selection.panels.clear();
+            for(const node of this.selection)
+                if(node.type == 'panel') {
+                    node.rect.classList.remove('selected');
+                    this.selection.delete(node);
+                }
         }
         delete this.dragging;
         event.stopPropagation();
-        return true;
+        event.preventDefault();
     }.bind(this);
-    this.svg.ontouchend = function(event) {
-        return this.svg.onmouseup(event.touches[0]);
-    }.bind(this);
-    this.svg.onmouseleave = function(event) {
-        return this.svg.onmouseup(event);
-    }.bind(this);
+    this.svg.addEventListener('mouseup', mouseup);
+    this.svg.addEventListener('mouseleave', mouseup);
+    this.svg.addEventListener('touchend', function(event) {
+        return mouseup(event.touches[0]);
+    });
 
     const svgDefs = this.createElement('defs', this.svg);
     const blurFilter = this.createElement('filter', svgDefs);
@@ -90,11 +130,7 @@ export default function module(parentElement) {
     this.panels = new Set();
     this.springs = new Set();
     this.wires = new Set();
-    this.selection = {
-        sockets: new Set(),
-        wires: new Set(),
-        panels: new Set()
-    };
+    this.selection = new Set();
     this.tickCount = 0;
     this.actionStack = [];
     this.actionIndex = 0;
@@ -102,11 +138,10 @@ export default function module(parentElement) {
 
 module.prototype.config = {
     socketRadius: 5,
+    verticalSocketsOutside: false,
+    horizontalSocketsOutside: false,
     fontSize: 12,
     wireStyle: 'hybrid',
-    headSocket: true,
-    panelLines: true,
-    panelWidth: 300,
     panelCornerRadius: 10,
     panelPadding: 12,
     panelMargin: 12,
@@ -117,132 +152,27 @@ module.prototype.config = {
     undoActionLimit: 0
 };
 
-module.prototype.handleKeyboard = function(event) {
-    if(this.svg.parentNode.querySelector('svg:hover') == null || event.ctrlKey)
-        return;
-    switch(event.keyCode) {
-        case 8: // Backspace
-            this.iterateSelection(function(type, element, node) {
-                if(node.ondeletion)
-                    node.ondeletion(type, element, node);
-            });
-            this.deselectAll();
-            this.syncGraph();
-            break;
-        case 13: // Enter
-            this.iterateSelection(function(type, element, node) {
-                if(node.onactivation)
-                    node.onactivation(type, element, node);
-            });
-            break;
-        case 90: // Meta (+ Shift) + Z
-            if(!event.metaKey)
-                return;
-            if(event.shiftKey) {
-                if(this.actionIndex < this.actionStack.length)
-                    this.actionStack[this.actionIndex++](true);
-            } else {
-                if(this.actionIndex > 0)
-                    this.actionStack[--this.actionIndex](false);
-            }
-            break;
-        default:
-            return;
-    }
-    event.stopPropagation();
-    event.preventDefault();
-};
-
-module.prototype.setHandlers = function(type, element, node) {
-    element.onmousedown = function(event) {
-        this.draggingMoved = false;
-        const rect = this.svg.getBoundingClientRect(),
-            mouseX = event.pageX - rect.left - window.pageXOffset,
-            mouseY = event.pageY - rect.top - window.pageYOffset;
-        if(event.shiftKey)
-            this.setSelected(type, element, node, 'toggle');
-        else switch(type) {
-            case 'panels':
-                this.setSelected(type, element, node, true);
-                this.dragging = new Map();
-                this.selection.panels.forEach(function(node) {
-                    let dragging = {
-                        x: mouseX - node.x,
-                        y: mouseY - node.y
-                    };
-                    this.dragging.set(node, dragging);
-                }, this);
-                break;
-            case 'sockets':
-                this.dragging = {
-                    type: node.type,
-                    srcSocket: node,
-                    dstSocket: {
-                        circle: {}
-                    }
-                };
-                break;
-        }
-        event.stopPropagation();
-        return true;
-    }.bind(this);
-    element.ontouchstart = function(event) {
-        return element.onmousedown(event.touches[0]);
-    }.bind(this);
-    element.onmouseup = function(event) {
-        if(event.shiftKey)
-            return true;
-        if(!this.draggingMoved) {
-            if(node.onactivation)
-                node.onactivation(type, element, node);
-        } else if(this.dragging && this.dragging.path) {
-            if(node.onwireconnect)
-                node.onwireconnect(type, element, node, this.dragging);
-        }
-    }.bind(this);
-    element.ontouchstop = function(event) {
-        return element.onmouseup(event.touches[0]);
-    }.bind(this);
-};
-
-module.prototype.createElement = function(tag, parentNode) {
-    const element = document.createElementNS(this.svg.namespaceURI, tag);
-    parentNode.appendChild(element);
-    return element;
-};
-
-module.prototype.setSelected = function(type, element, node, newValue) {
-    const oldValue = this.selection[type].has(node);
+module.prototype.setSelected = function(node, newValue) {
+    const oldValue = this.selection.has(node),
+          svgElement = eventElementOfNode(node);
     if(newValue == oldValue)
         return oldValue;
     if(newValue == 'toggle')
         newValue = !oldValue;
     if(newValue) {
-        this.selection[type].add(node);
-        element.classList.add('selected');
+        this.selection.add(node);
+        svgElement.classList.add('selected');
     } else {
-        this.selection[type].delete(node);
-        element.classList.remove('selected');
+        this.selection.delete(node);
+        svgElement.classList.remove('selected');
     }
     return newValue;
 };
 
-module.prototype.iterateSelection = function(callback) {
-    for(let socket of this.selection.sockets)
-        callback('sockets', socket.circle, socket);
-    for(let wire of this.selection.wires)
-        callback('wires', wire.path, wire);
-    for(let panel of this.selection.panels)
-        callback('panels', panel.rect, panel);
-};
-
 module.prototype.deselectAll = function() {
-    this.iterateSelection(function(type, element, node) {
-        element.classList.remove('selected');
-    });
-    this.selection.sockets.clear();
-    this.selection.wires.clear();
-    this.selection.panels.clear();
+    for(let node of this.selection)
+        eventElementOfNode(node).classList.remove('selected');
+    this.selection.clear();
 };
 
 module.prototype.undoableAction = function(action) {
@@ -255,172 +185,220 @@ module.prototype.undoableAction = function(action) {
     this.actionStack[this.actionIndex++](true);
 };
 
-module.prototype.getSocketAtIndex = function(panel, index) {
-    if(index < 0)
-        return panel.leftSide[-index - 1];
-    else if(index > 0)
-        return panel.rightSide[index - 1];
-    else
-        return panel;
-};
-
-module.prototype.getIndexOfSocket = function(socket) {
-    if(socket.panel === socket)
-        return 0;
-    for(let i = 0; i < socket.panel.leftSide.length; ++i)
-        if(socket.panel.leftSide[i] === socket)
-            return -i - 1;
-    for(let i = 0; i < socket.panel.rightSide.length; ++i)
-        if(socket.panel.rightSide[i] === socket)
-            return i + 1;
-    return undefined;
-};
-
-module.prototype.connectPanels = function(srcPanel, dstPanel) {
-    if(srcPanel === dstPanel)
-        return;
-    let spring = srcPanel.springs.get(dstPanel);
-    if(spring)
-        ++spring.referenceCount;
-    else {
-        spring = {
-            referenceCount: 1,
-            srcPanel: srcPanel,
-            dstPanel: dstPanel
-        };
-        srcPanel.springs.set(dstPanel, spring);
-        dstPanel.springs.set(srcPanel, spring);
-        this.springs.add(spring);
-    }
-    return spring;
-};
-
-module.prototype.disconnectPanels = function(srcPanel, dstPanel) {
-    if(srcPanel === dstPanel)
-        return;
-    const spring = srcPanel.springs.get(dstPanel);
-    if(spring.referenceCount > 1)
-        --spring.referenceCount;
-    else {
-        srcPanel.springs.delete(dstPanel);
-        dstPanel.springs.delete(srcPanel);
-        this.springs.delete(spring);
-    }
-};
-
-module.prototype.connectSocket = function(wire, srcSocket, dstPanel) {
-    let set;
-    if(!srcSocket.wiresPerPanel.has(dstPanel)) {
-        set = new Set();
-        srcSocket.wiresPerPanel.set(dstPanel, set);
-    } else {
-        set = srcSocket.wiresPerPanel.get(dstPanel);
-        if(set.has(wire))
-            return false;
-    }
-    set.add(wire);
-    return true;
-};
-
-module.prototype.disconnectSocket = function(wire, srcSocket, dstPanel) {
-    if(!srcSocket.wiresPerPanel.has(dstPanel))
-        return false;
-    const set = srcSocket.wiresPerPanel.get(dstPanel);
-    if(!set.has(wire))
-        return false;
-    set.delete(wire);
-    if(set.size === 0)
-        srcSocket.wiresPerPanel.delete(dstPanel);
-    return true;
-};
-
-module.prototype.initializeWire = function(wire) {
-    if(wire.srcPanel && wire.dstPanel) {
-        if(!this.connectSocket(wire, wire.srcSocket, wire.dstPanel) ||
-            !this.connectSocket(wire, wire.dstSocket, wire.srcPanel))
-            return;
-        this.connectPanels(wire.srcPanel, wire.dstPanel);
-    }
+module.prototype.createWire = function(wire) {
+    if(!wire)
+        wire = {};
+    wire.type = 'wire';
     wire.path = this.createElement('path', this.wiresGroup);
     wire.path.classList.add('wire');
     wire.path.classList.add('fadeIn');
-    wire.path.classList.add(wire.type);
-    this.setHandlers('wires', wire.path, wire);
+    this.addEventListeners(wire);
     this.wires.add(wire);
     this.dirtyFlag = true;
     return wire;
 };
 
-module.prototype.initializePanel = function(panel) {
-    const rect = this.svg.getBoundingClientRect();
+module.prototype.connectWire = function(wire) {
+    function connectSocket(srcSocket, dstPanel) {
+        let set;
+        if(!srcSocket.wiresPerPanel.has(dstPanel)) {
+            set = new Set();
+            srcSocket.wiresPerPanel.set(dstPanel, set);
+        } else {
+            set = srcSocket.wiresPerPanel.get(dstPanel);
+            if(set.has(wire))
+                return false;
+        }
+        set.add(wire);
+        return true;
+    }
+    if(!connectSocket(wire.srcSocket, wire.dstPanel) ||
+       !connectSocket(wire.dstSocket, wire.srcPanel))
+        return;
+    if(wire.srcPanel != wire.dstPanel) {
+        let spring = wire.srcPanel.springs.get(wire.dstPanel);
+        if(spring)
+            ++spring.referenceCount;
+        else {
+            spring = {
+                referenceCount: 1,
+                srcPanel: wire.srcPanel,
+                dstPanel: wire.dstPanel
+            };
+            wire.srcPanel.springs.set(wire.dstPanel, spring);
+            wire.dstPanel.springs.set(wire.srcPanel, spring);
+            this.springs.add(spring);
+        }
+    }
+};
+
+module.prototype.createPanel = function(panel) {
+    if(!panel)
+        panel = {};
+    panel.type = 'panel';
     panel.springs = new Map();
+    panel.group = this.createElement('g', this.panelsGroup);
+    panel.lines = this.createElement('path', panel.group);
+    panel.rect = this.createElement('rect', panel.group);
+    panel.circleGroup = this.createElement('g', panel.group);
+    panel.labelGroup = this.createElement('g', panel.group);
+    panel.group.classList.add('fadeIn');
+    panel.lines.classList.add('panel');
+    panel.rect.classList.add('panel');
+    panel.rect.setAttribute('rx', this.config.panelCornerRadius);
+    panel.rect.setAttribute('ry', this.config.panelCornerRadius);
+    const rect = this.svg.getBoundingClientRect();
     if(!panel.x)
         panel.x = rect.width * Math.random();
     if(!panel.y)
         panel.y = rect.height * Math.random();
-    this.syncPanel(panel);
+    if(!panel.sockets)
+        panel.sockets = [];
+    this.addEventListeners(panel);
     this.panels.add(panel);
     this.dirtyFlag = true;
     return panel;
 };
 
-module.prototype.delete = function(element) {
-    element.deathFlag = true;
-    this.dirtyFlag = true;
-};
+module.prototype.updatePanelSockets = function(panel) {
+    panel.topSockets = [];
+    panel.leftSockets = [];
+    panel.rightSockets = [];
+    panel.bottomSockets = [];
 
-module.prototype.tickSocket = function(posX, posY, socket) {
-    let element = socket.circle;
-    element.x = posX + parseInt(element.getAttribute('cx'));
-    element.y = posY + parseInt(element.getAttribute('cy'));
-};
+    for(let i = 0; i < panel.sockets.length; ++i) {
+        const socket = panel.sockets[i];
+        if(socket.deathFlag) {
+            this.dirtyFlag = true;
+            this.deleteSocket(socket);
+            panel.circleGroup.removeChild(panel.circleGroup.childNodes[i]);
+            panel.labelGroup.removeChild(panel.labelGroup.childNodes[i]);
+            panel.sockets.splice(i, 1);
+            --i;
+            continue;
+        }
 
-module.prototype.tickWire = function(wire) {
-    const src = wire.srcSocket.circle,
-        dst = wire.dstSocket.circle;
-    switch(this.config.wireStyle) {
-        case 'straight':
-            wire.path.setAttribute('d', 'M' + src.x + ',' + src.y + 'L' + dst.x + ',' + dst.y);
-            break;
-        case 'vertical':
-            wire.path.setAttribute('d', 'M' + src.x + ',' + src.y + 'C' + dst.x + ',' + src.y + ' ' + src.x + ',' + dst.y + ' ' + dst.x + ',' + dst.y);
-            break;
-        case 'horizontal':
-            wire.path.setAttribute('d', 'M' + src.x + ',' + src.y + 'C' + src.x + ',' + dst.y + ' ' + dst.x + ',' + src.y + ' ' + dst.x + ',' + dst.y);
-            break;
-        case 'hybrid':
-            if(Math.abs(src.x - dst.x) < Math.abs(src.y - dst.y))
-                wire.path.setAttribute('d', 'M' + src.x + ',' + src.y + 'C' + dst.x + ',' + src.y + ' ' + src.x + ',' + dst.y + ' ' + dst.x + ',' + dst.y);
-            else
-                wire.path.setAttribute('d', 'M' + src.x + ',' + src.y + 'C' + src.x + ',' + dst.y + ' ' + dst.x + ',' + src.y + ' ' + dst.x + ',' + dst.y);
-            break;
-        case 'gravity':
-            const diffX = dst.x - src.x;
-            const maxY = Math.max(dst.y, src.y) + 20;
-            wire.path.setAttribute('d', 'M' + src.x + ',' + src.y + 'C' + (src.x + diffX * 0.25) + ',' + maxY + ' ' + (src.x + diffX * 0.75) + ',' + maxY + ' ' + dst.x + ',' + dst.y);
-            break;
+        if(!socket.circle) {
+            socket.type = 'socket';
+            socket.circle = this.createElement('circle', panel.circleGroup);
+            socket.circle.classList.add('socket');
+            socket.circle.setAttribute('r', this.config.socketRadius);
+            socket.label = this.createElement('text', panel.labelGroup);
+            socket.label.classList.add('label');
+            socket.label.textContent = 'undefined';
+            this.addEventListeners(socket);
+            socket.wiresPerPanel = new Map();
+            socket.panel = panel;
+        }
+
+        switch(socket.orientation) {
+            case 'top':
+                panel.topSockets.push(socket);
+                break;
+            case 'left':
+                panel.leftSockets.push(socket);
+                break;
+            case 'right':
+                panel.rightSockets.push(socket);
+                break;
+            case 'bottom':
+                panel.bottomSockets.push(socket);
+                break;
+        }
     }
 };
 
-module.prototype.panelMinX = function(panel) {
-    return panel.x - panel.width / 2 - this.config.panelMargin;
+module.prototype.updatePanelGeometry = function(panel) {
+    const topAndBottomLine = (this.config.socketsOutside) ? 1 : 2,
+          horizontalSocketPadding = (this.config.horizontalSocketsOutside) ? 1 : 2,
+          topLine = (panel.topSockets.length) ? topAndBottomLine : 0,
+          bottomLine = (panel.bottomSockets.length) ? topAndBottomLine : 0,
+          doubleLineCount = Math.min(panel.leftSockets.length, panel.rightSockets.length),
+          singleLineCount = Math.max(panel.leftSockets.length, panel.rightSockets.length),
+          totalLineCount = topLine + singleLineCount + bottomLine;
+
+    let topLineWidth = this.config.panelPadding * (panel.topSockets.length + 1),
+        bottomLineWidth = this.config.panelPadding * (panel.bottomSockets.length + 1);
+    for(const socket of panel.topSockets)
+        topLineWidth += socket.label.getBBox().width;
+    for(const socket of panel.bottomSockets)
+        bottomLineWidth += socket.label.getBBox().width;
+    panel.width = Math.max(topLineWidth, bottomLineWidth);
+    for(let i = 0; i < doubleLineCount; ++i)
+        panel.width = Math.max(panel.width, this.config.panelPadding * (horizontalSocketPadding * 2 + 1) + panel.leftSockets[i].label.getBBox().width + panel.rightSockets[i].label.getBBox().width);
+    for(let i = doubleLineCount; i < panel.leftSockets.length; ++i)
+        panel.width = Math.max(panel.width, this.config.panelPadding * horizontalSocketPadding + panel.leftSockets[i].label.getBBox().width);
+    for(let i = doubleLineCount; i < panel.rightSockets.length; ++i)
+        panel.width = Math.max(panel.width, this.config.panelPadding * horizontalSocketPadding + panel.rightSockets[i].label.getBBox().width);
+    panel.height = totalLineCount * this.config.panelPadding * 2;
+    panel.rect.setAttribute('width', panel.width);
+    panel.rect.setAttribute('height', panel.height);
+
+    const verticalSockets = function(sockets, lineWidth, sideFactor) {
+        let lastWidth = 0,
+            posX = (panel.width - lineWidth) / 2,
+            posY = Math.round((sideFactor == 1 ? panel.height : 0) + sideFactor * this.config.panelPadding * (this.config.verticalSocketsOutside ? 1 : -1)),
+            labelPosY = Math.round(posY - sideFactor * this.config.panelPadding * 2 + this.config.fontSize * 0.4);
+        for(let i = 0; i < sockets.length; ++i) {
+            const socket = sockets[i],
+                  width = socket.label.getBBox().width,
+                  dist = (lastWidth + width) / 2 + this.config.panelPadding;
+            lastWidth = width;
+            posX += dist;
+            socket.circle.x = Math.round(posX);
+            socket.circle.y = posY;
+            socket.label.setAttribute('x', socket.circle.x);
+            socket.label.setAttribute('y', labelPosY);
+            socket.label.setAttribute('text-anchor', 'middle');
+        }
+    }.bind(this);
+    const horizontalSockets = function(sockets, sideFactor) {
+        const paddingFactor = (this.config.horizontalSocketsOutside) ? 1 : 0,
+              posX = Math.round((sideFactor == -1 ? panel.width : 0) + sideFactor * (1 - 2 * paddingFactor) * this.config.panelPadding),
+              labelPosX = Math.round(posX + sideFactor * (1 + paddingFactor) * this.config.panelPadding);
+        for(let i = 0; i < sockets.length; ++i) {
+            const socket = sockets[i];
+            socket.circle.x = posX;
+            socket.circle.y = ((topLine + i) * 2 + 1) * this.config.panelPadding;
+            socket.label.setAttribute('x', labelPosX);
+            socket.label.setAttribute('y', Math.round(socket.circle.y + this.config.fontSize * 0.4));
+            socket.label.setAttribute('text-anchor', (sideFactor == 1) ? 'start' : 'end');
+        }
+    }.bind(this);
+    verticalSockets(panel.topSockets, topLineWidth, -1);
+    verticalSockets(panel.bottomSockets, bottomLineWidth, 1);
+    horizontalSockets(panel.leftSockets, 1);
+    horizontalSockets(panel.rightSockets, -1);
+
+    for(const socket of panel.sockets) {
+        socket.circle.setAttribute('cx', socket.circle.x);
+        socket.circle.setAttribute('cy', socket.circle.y);
+    }
+
+    let pathD = '';
+    if(topLine > 0)
+        pathD += 'M0,' + (topLine * this.config.panelPadding * 2) + 'h' + panel.width;
+    if(bottomLine > 0)
+        pathD += 'M0,' + ((totalLineCount - bottomLine) * this.config.panelPadding * 2) + 'h' + panel.width;
+    panel.lines.setAttribute('d', pathD);
+
+    return panel;
 };
 
-module.prototype.panelMaxX = function(panel) {
-    return panel.x + panel.width / 2 + this.config.panelMargin;
-};
-
-module.prototype.panelMinY = function(panel) {
-    return panel.y - panel.height / 2 - this.config.panelMargin;
-};
-
-module.prototype.panelMaxY = function(panel) {
-    return panel.y + panel.height / 2 + this.config.panelMargin;
+module.prototype.delete = function(node) {
+    node.deathFlag = true;
+    this.dirtyFlag = true;
 };
 
 module.prototype.tickGraph = function() {
     if(--this.tickCount == 0)
         window.clearInterval(this.animationTimer);
+
+    const boundingRect = function(panel) {
+        const halfWidth = panel.width / 2 + this.config.panelMargin,
+              halfHeight = panel.height / 2 + this.config.panelMargin;
+        return [panel.x - halfWidth, panel.x + halfWidth, panel.y - halfHeight, panel.y + halfHeight];
+    }.bind(this);
 
     if(this.config.springStiffness != 0)
         for(const spring of this.springs) {
@@ -444,8 +422,9 @@ module.prototype.tickGraph = function() {
             for(const panelB of this.panels) {
                 if(i <= j)
                     break;
-                let overlapX = Math.min(this.panelMaxX(panelA), this.panelMaxX(panelB)) - Math.max(this.panelMinX(panelA), this.panelMinX(panelB)),
-                    overlapY = Math.min(this.panelMaxY(panelA), this.panelMaxY(panelB)) - Math.max(this.panelMinY(panelA), this.panelMinY(panelB));
+                const rectA = boundingRect(panelA), rectB = boundingRect(panelB);
+                let overlapX = Math.min(panelA[1], panelB[1]) - Math.max(panelA[0], panelB[0]),
+                    overlapY = Math.min(panelA[3], panelB[3]) - Math.max(panelA[2], panelB[2]);
                 if(overlapX <= 0 || overlapY <= 0)
                     continue;
                 if(Math.abs(overlapX) < Math.abs(overlapY)) {
@@ -468,141 +447,34 @@ module.prototype.tickGraph = function() {
     if(this.config.borderCollision) {
         const rect = this.svg.getBoundingClientRect();
         for(const panel of this.panels) {
-            if(this.panelMinX(panel) < 0)
-                panel.x -= this.panelMinX(panel);
-            else if(this.panelMaxX(panel) > rect.width)
-                panel.x -= this.panelMaxX(panel) - rect.width;
-            if(this.panelMinY(panel) < 0)
-                panel.y -= this.panelMinY(panel);
-            else if(this.panelMaxY(panel) > rect.height)
-                panel.y -= this.panelMaxY(panel) - rect.height;
+            const panelRect = boundingRect(panel);
+            if(panelRect[0] < 0)
+                panel.x -= panelRect[0];
+            else if(panelRect[1] > rect.width)
+                panel.x -= panelRect[1] - rect.width;
+            if(panelRect[2] < 0)
+                panel.y -= panelRect[2];
+            else if(panelRect[3] > rect.height)
+                panel.y -= panelRect[3] - rect.height;
         }
     }
 
     for(const panel of this.panels) {
         const posX = panel.x - panel.width / 2,
-            posY = panel.y - panel.height / 2;
+              posY = panel.y - panel.height / 2;
         panel.group.setAttribute('transform', 'translate(' + posX + ', ' + posY + ')');
-        if(panel.circle)
-            this.tickSocket(posX, posY, panel);
-        for(let i = 0; i < panel.leftSide.length; ++i)
-            this.tickSocket(posX, posY, panel.leftSide[i]);
-        for(let i = 0; i < panel.rightSide.length; ++i)
-            this.tickSocket(posX, posY, panel.rightSide[i]);
+
+        function tickSocket(socket) {
+            const svgElement = socket.circle;
+            svgElement.x = posX + parseInt(svgElement.getAttribute('cx'));
+            svgElement.y = posY + parseInt(svgElement.getAttribute('cy'));
+        };
+        for(const socket of panel.sockets)
+            tickSocket(socket);
     }
 
     for(const wire of this.wires)
         this.tickWire(wire);
-};
-
-module.prototype.deleteSocket = function(socket) {
-    this.dirtyFlag = true;
-    this.selection.sockets.delete(socket);
-    for(const pair of socket.wiresPerPanel)
-        for(const wire of pair[1])
-            wire.deathFlag = true;
-};
-
-module.prototype.syncPanelSide = function(panel, side, isLeft) {
-    for(let i = 0; i < side.length; ++i) {
-        const socket = side[i];
-        if(socket.deathFlag) {
-            this.deleteSocket(socket);
-            side.group.removeChild(side.group.childNodes[i * 2 + 1]);
-            side.group.removeChild(side.group.childNodes[i * 2]);
-            side.splice(i, 1);
-            --i;
-            continue;
-        }
-
-        if(!socket.circle) {
-            socket.circle = this.createElement('circle', side.group);
-            socket.circle.classList.add('socket');
-            socket.circle.classList.add(socket.type);
-            socket.circle.setAttribute('r', this.config.socketRadius);
-            socket.label = this.createElement('text', side.group);
-            socket.label.setAttribute('text-anchor', (isLeft) ? 'start' : 'end');
-            this.setHandlers('sockets', socket.circle, socket);
-            socket.wiresPerPanel = new Map();
-            socket.panel = panel;
-        }
-
-        const posY = (i + 1) * this.config.panelPadding * 2;
-        socket.circle.x = Math.round((isLeft) ? this.config.panelPadding : panel.width - this.config.panelPadding);
-        socket.circle.y = Math.round(posY + this.config.panelPadding);
-        socket.circle.setAttribute('cx', socket.circle.x);
-        socket.circle.setAttribute('cy', socket.circle.y);
-        socket.label.setAttribute('x', Math.round((isLeft) ? this.config.panelPadding * 2 : panel.width - this.config.panelPadding * 2));
-        socket.label.setAttribute('y', Math.round(posY + this.config.panelPadding + this.config.fontSize * 0.4));
-    }
-};
-
-module.prototype.syncPanel = function(panel) {
-    if(!panel.group) {
-        panel.group = this.createElement('g', this.panelsGroup);
-        panel.group.classList.add('fadeIn');
-
-        panel.rect = this.createElement('rect', panel.group);
-        panel.rect.classList.add('panel');
-        panel.rect.classList.add(panel.type);
-        panel.rect.setAttribute('rx', this.config.panelCornerRadius);
-        panel.rect.setAttribute('ry', this.config.panelCornerRadius);
-        this.setHandlers('panels', panel.rect, panel);
-        panel.wiresPerPanel = new Map();
-        panel.panel = panel;
-
-        if(this.config.headSocket) {
-            panel.circle = this.createElement('circle', panel.group);
-            panel.circle.classList.add('socket');
-            panel.circle.classList.add(panel.type);
-            panel.circle.y = Math.round(-this.config.panelPadding);
-            panel.circle.setAttribute('cy', panel.circle.y);
-            panel.circle.setAttribute('r', this.config.socketRadius);
-            this.setHandlers('sockets', panel.circle, panel);
-        }
-
-        panel.label = this.createElement('text', panel.group);
-        panel.label.setAttribute('text-anchor', 'middle');
-        panel.label.setAttribute('y', Math.round(this.config.panelPadding + this.config.fontSize * 0.4));
-        panel.label.textContent = 'undefined';
-
-        panel.leftSide.group = this.createElement('g', panel.group);
-        panel.rightSide.group = this.createElement('g', panel.group);
-        if(this.config.panelLines) {
-            panel.lines = [];
-            panel.lines.group = this.createElement('g', panel.group);
-            panel.lines.group.classList.add('panel');
-            panel.lines.group.classList.add(panel.type);
-        }
-    }
-
-    if(!panel.width)
-        panel.width = this.config.panelWidth;
-    this.syncPanelSide(panel, panel.leftSide, true);
-    this.syncPanelSide(panel, panel.rightSide, false);
-    const socketCount = Math.max(panel.leftSide.length, panel.rightSide.length);
-    panel.height = (socketCount + 1) * this.config.panelPadding * 2;
-    panel.rect.setAttribute('width', panel.width);
-    panel.rect.setAttribute('height', panel.height);
-    const halfWidth = Math.round(panel.width / 2);
-    if(panel.circle)
-        panel.circle.setAttribute('cx', halfWidth);
-    panel.label.setAttribute('x', halfWidth);
-
-    if(panel.lines) {
-        for(let i = panel.lines.group.childNodes.length - 1; i >= socketCount; --i)
-            panel.lines.group.removeChild(panel.lines.group.childNodes[i]);
-        panel.lines.splice(socketCount);
-
-        for(let i = panel.lines.group.childNodes.length; i < socketCount; ++i) {
-            const posY = (i + 1) * this.config.panelPadding * 2;
-            panel.lines[i] = this.createElement('path', panel.lines.group);
-            panel.lines[i].setAttribute('d', 'M0,' + posY + 'h' + panel.width);
-            panel.lines[i].classList.add('noHover');
-        }
-    }
-
-    return panel;
 };
 
 module.prototype.stabilizeGraph = function() {
@@ -621,41 +493,167 @@ module.prototype.syncGraph = function() {
     for(const panel of this.panels) {
         if(!panel.deathFlag)
             continue;
-        if(panel.circle)
-            this.deleteSocket(panel);
-        for(let i = 0; i < panel.leftSide.length; ++i)
-            this.deleteSocket(panel.leftSide[i]);
-        for(let i = 0; i < panel.rightSide.length; ++i)
-            this.deleteSocket(panel.rightSide[i]);
+        for(const socket of panel.sockets)
+            this.deleteSocket(socket);
         trash.add(panel.group);
         this.panels.delete(panel);
-        this.selection.panels.delete(panel);
+        this.selection.delete(panel);
     }
 
     for(const wire of this.wires) {
         if(!wire.deathFlag)
             continue;
         if(wire.srcPanel && wire.dstPanel) {
-            this.disconnectSocket(wire, wire.srcSocket, wire.dstPanel);
-            this.disconnectSocket(wire, wire.dstSocket, wire.srcPanel);
-            this.disconnectPanels(wire.srcPanel, wire.dstPanel);
+            function disconnectSocket(srcSocket, dstPanel) {
+                if(!srcSocket.wiresPerPanel.has(dstPanel))
+                    return false;
+                const set = srcSocket.wiresPerPanel.get(dstPanel);
+                if(!set.has(wire))
+                    return false;
+                set.delete(wire);
+                if(set.size == 0)
+                    srcSocket.wiresPerPanel.delete(dstPanel);
+                return true;
+            }
+            disconnectSocket(wire.srcSocket, wire.dstPanel);
+            disconnectSocket(wire.dstSocket, wire.srcPanel);
+            if(srcPanel != dstPanel) {
+                const spring = srcPanel.springs.get(dstPanel);
+                if(spring.referenceCount > 1)
+                    --spring.referenceCount;
+                else {
+                    srcPanel.springs.delete(dstPanel);
+                    dstPanel.springs.delete(srcPanel);
+                    this.springs.delete(spring);
+                }
+            }
         }
         trash.add(wire.path);
         this.wires.delete(wire);
-        this.selection.wires.delete(wire);
+        this.selection.delete(wire);
     }
 
-    this.deleteElements(trash);
+    deleteElements(trash);
     this.stabilizeGraph();
 };
 
-module.prototype.deleteElements = function(trash) {
-    for(const element of trash) {
-        element.classList.remove('fadeIn');
-        element.classList.add('fadeOut');
+
+
+module.prototype.addEventListeners = function(node) {
+    const svgElement = eventElementOfNode(node);
+    const mousedown = function(event) {
+        this.draggingMoved = false;
+        const rect = this.svg.getBoundingClientRect(),
+              mouseX = event.pageX - rect.left - window.pageXOffset,
+              mouseY = event.pageY - rect.top - window.pageYOffset;
+        if(event.shiftKey)
+            this.setSelected(node, 'toggle');
+        else switch(node.type) {
+            case 'panel':
+                this.setSelected(node, true);
+                this.dragging = new Map();
+                for(const node of this.selection)
+                    if(node.type == 'panel')
+                        this.dragging.set(node, {
+                            x: mouseX - node.x,
+                            y: mouseY - node.y
+                        });
+                break;
+            case 'socket':
+                this.dragging = {
+                    srcSocket: node,
+                    dstSocket: { circle: {} }
+                };
+                break;
+        }
+        event.stopPropagation();
+        event.preventDefault();
+    }.bind(this);
+    svgElement.addEventListener('mousedown', mousedown);
+    svgElement.addEventListener('touchstart', function(event) {
+        return mousedown(event.touches[0]);
+    });
+
+    const mouseup = function(event) {
+        if(event.shiftKey)
+            return true;
+        if(!this.draggingMoved) {
+            if(node.onactivation)
+                node.onactivation(node);
+        } else if(this.dragging.type == 'wire' && node.onwireconnect && node.onwireconnect(node, this.dragging)) {
+            this.dragging.dstSocket = node;
+            this.connectWire(this.dragging);
+            this.tickWire(this.dragging);
+            this.dragging.path.classList.remove('noHover');
+            delete this.dragging;
+        }
+    }.bind(this);
+    svgElement.addEventListener('mouseup', mouseup);
+    svgElement.addEventListener('touchstop', function(event) {
+        return mouseup(event.touches[0]);
+    });
+};
+
+module.prototype.createElement = function(tag, parentNode) {
+    const svgElement = document.createElementNS(this.svg.namespaceURI, tag);
+    parentNode.appendChild(svgElement);
+    return svgElement;
+};
+
+function eventElementOfNode(node) {
+    switch(node.type) {
+        case 'socket':
+            return node.circle;
+        case 'wire':
+            return node.path;
+        case 'panel':
+            return node.rect;
+    }
+}
+
+function deleteElements(svgElements) {
+    for(const svgElement of svgElements) {
+        svgElement.classList.remove('fadeIn');
+        svgElement.classList.add('fadeOut');
     }
     window.setTimeout(function() {
-        for(const element of trash)
-            element.parentNode.removeChild(element);
-    }.bind(this), 250);
+        for(const svgElement of svgElements)
+            svgElement.parentNode.removeChild(svgElement);
+    }, 250);
+}
+
+module.prototype.deleteSocket = function(socket) {
+    this.selection.delete(socket);
+    for(const pair of socket.wiresPerPanel)
+        for(const wire of pair[1])
+            wire.deathFlag = true;
+};
+
+module.prototype.tickWire = function(wire) {
+    const src = wire.srcSocket.circle,
+          dst = wire.dstSocket.circle;
+    let pathD = 'M' + src.x + ',' + src.y;
+    switch(this.config.wireStyle) {
+        case 'straight':
+            pathD += 'L' + dst.x + ',' + dst.y;
+            break;
+        case 'vertical':
+            pathD += 'C' + dst.x + ',' + src.y + ' ' + src.x + ',' + dst.y + ' ' + dst.x + ',' + dst.y;
+            break;
+        case 'horizontal':
+            pathD += 'C' + src.x + ',' + dst.y + ' ' + dst.x + ',' + src.y + ' ' + dst.x + ',' + dst.y;
+            break;
+        case 'hybrid':
+            if(Math.abs(src.x - dst.x) < Math.abs(src.y - dst.y))
+                pathD += 'C' + dst.x + ',' + src.y + ' ' + src.x + ',' + dst.y + ' ' + dst.x + ',' + dst.y;
+            else
+                pathD += 'C' + src.x + ',' + dst.y + ' ' + dst.x + ',' + src.y + ' ' + dst.x + ',' + dst.y;
+            break;
+        case 'gravity':
+            const diffX = dst.x - src.x;
+            const maxY = Math.max(dst.y, src.y) + 20;
+            pathD += 'C' + (src.x + diffX * 0.25) + ',' + maxY + ' ' + (src.x + diffX * 0.75) + ',' + maxY + ' ' + dst.x + ',' + dst.y;
+            break;
+    }
+    wire.path.setAttribute('d', pathD);
 };

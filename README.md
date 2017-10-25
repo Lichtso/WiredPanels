@@ -10,10 +10,16 @@
 
 Features:
 - Framework to build an Editor or Visualizer
-- Rendering: SVG + CSS animations
-- Force layout and overlap avoidance
+- No dependencies / no bloatware
 - Elements: Panels, sockets and wires
+- Configure: Many customizable options & parameters
+- Rendering
+    - SVG
+    - CSS animations
+    - Automatic layout inside panels (depending on text width)
+    - Force layout and overlap avoidance between panels
 - Mouse controls
+    - Touch event handlers for mobile use
     - Move panels
     - Drag / draw wires
     - Selection
@@ -21,14 +27,6 @@ Features:
     - Enter: Use / Activate
     - Backspace: Delete
     - Meta (+ Shift) + Z: Undo & Redo
-- Touch event handlers for mobile use
-
-Planned:
-- Clipboard
-    - https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
-    - https://developer.mozilla.org/en-US/docs/Web/API/ClipboardEvent
-    - https://developer.mozilla.org/en-US/docs/Web/API/File
-- Better API & documentation
 
 Example:
 [Try online](http://symatem.github.io) with [source code](https://github.com/Symatem/symatem.github.io/blob/master/js/OntologyEditor.js)

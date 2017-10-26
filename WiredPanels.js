@@ -10,16 +10,15 @@ export default function module(parentElement) {
             return;
         switch(event.keyCode) {
             case 8: // Backspace
+                if(this.config.ondeletion)
+                    this.config.ondeletion();
                 for(let node of this.selection)
-                    if(node.ondeletion)
-                        node.ondeletion(node);
-                this.deselectAll();
+                    this.delete(node);
                 this.syncGraph();
                 break;
             case 13: // Enter
-                for(let node of this.selection)
-                    if(node.onactivation)
-                        node.onactivation(node);
+                if(this.config.onactivation)
+                    this.config.onactivation();
                 break;
             case 90: // Meta (+ Shift) + Z
                 if(!event.metaKey)
@@ -41,7 +40,16 @@ export default function module(parentElement) {
 
     const mousedown = function(event) {
         this.draggingMoved = false;
-        this.deselectAll();
+        const mousePos = this.mousePositionOfEvent(event);
+        this.boxSelection.originX = mousePos[0];
+        this.boxSelection.originY = mousePos[1];
+        this.boxSelection.setAttribute('width', 0);
+        this.boxSelection.setAttribute('height', 0);
+        this.boxSelection.classList.remove('fadeOut');
+        this.boxSelection.classList.add('fadeIn');
+        this.dragging = this.boxSelection;
+        if(!event.shiftKey)
+            this.deselectAll();
         event.stopPropagation();
         event.preventDefault();
     }.bind(this);
@@ -54,21 +62,28 @@ export default function module(parentElement) {
         if(!this.dragging)
             return;
         this.draggingMoved = true;
-        const rect = this.svg.getBoundingClientRect(),
-              mouseX = event.pageX - rect.left - window.pageXOffset,
-              mouseY = event.pageY - rect.top - window.pageYOffset;
-        if(this.dragging.srcSocket) {
+        const mousePos = this.mousePositionOfEvent(event);
+        if(this.dragging == this.boxSelection) {
+            this.boxSelection.minX = Math.min(this.boxSelection.originX, mousePos[0]);
+            this.boxSelection.minY = Math.min(this.boxSelection.originY, mousePos[1]);
+            this.boxSelection.maxX = Math.max(this.boxSelection.originX, mousePos[0]);
+            this.boxSelection.maxY = Math.max(this.boxSelection.originY, mousePos[1]);
+            this.boxSelection.setAttribute('x', this.boxSelection.minX);
+            this.boxSelection.setAttribute('y', this.boxSelection.minY);
+            this.boxSelection.setAttribute('width', this.boxSelection.maxX-this.boxSelection.minX);
+            this.boxSelection.setAttribute('height', this.boxSelection.maxY-this.boxSelection.minY);
+        } else if(this.dragging.srcSocket) {
             if(this.dragging.type != 'wire') {
                 this.createWire(this.dragging);
                 this.dragging.path.classList.add('noHover');
             }
-            this.dragging.dstSocket.circle.x = mouseX;
-            this.dragging.dstSocket.circle.y = mouseY;
+            this.dragging.dstSocket.circle.x = mousePos[0];
+            this.dragging.dstSocket.circle.y = mousePos[1];
             this.tickWire(this.dragging);
         } else {
             this.dragging.forEach(function(dragging, panel) {
-                panel.x = mouseX - dragging.x;
-                panel.y = mouseY - dragging.y;
+                panel.x = mousePos[0] - dragging.x;
+                panel.y = mousePos[1] - dragging.y;
             }, this);
             this.stabilizeGraph();
         }
@@ -83,17 +98,39 @@ export default function module(parentElement) {
     const mouseup = function(event) {
         if(!this.dragging)
             return;
-        if(this.dragging.type == 'wire') {
+        if(this.dragging == this.boxSelection) {
+            this.boxSelection.classList.remove('fadeIn');
+            this.boxSelection.classList.add('fadeOut');
+            if(this.draggingMoved) {
+                const isSocketInBoxSelection = function(socket) {
+                    return this.boxSelection.minX < socket.circle.x && socket.circle.x < this.boxSelection.maxX
+                        && this.boxSelection.minY < socket.circle.y && socket.circle.y < this.boxSelection.maxY;
+                }.bind(this);
+                const selectionMode = (event.shiftKey) ? 'toggle' : true;
+                for(const panel of this.panels) {
+                    const rect = this.boundingRectOfPanel(panel);
+                    if(this.boxSelection.minX < rect[0] && rect[1] < this.boxSelection.maxX
+                       && this.boxSelection.minY < rect[2] && rect[3] < this.boxSelection.maxY)
+                        this.setSelected(panel, selectionMode);
+                    for(const socket of panel.sockets)
+                        if(isSocketInBoxSelection(socket))
+                            this.setSelected(socket, selectionMode);
+                }
+                for(const wire of this.wires)
+                    if(isSocketInBoxSelection(wire.srcSocket) && isSocketInBoxSelection(wire.dstSocket))
+                        this.setSelected(wire, selectionMode);
+            }
+        } else if(this.dragging.type == 'wire') {
             this.selection.delete(this.dragging);
             this.wires.delete(this.dragging);
             deleteElements([this.dragging.path]);
-        } else {
+        } else
             for(const node of this.selection)
                 if(node.type == 'panel') {
                     node.rect.classList.remove('selected');
                     this.selection.delete(node);
                 }
-        }
+        this.draggingMoved = false;
         delete this.dragging;
         event.stopPropagation();
         event.preventDefault();
@@ -127,6 +164,8 @@ export default function module(parentElement) {
 
     this.panelsGroup = this.createElement('g', this.svg);
     this.wiresGroup = this.createElement('g', this.svg);
+    this.boxSelection = this.createElement('rect', this.svg);
+    this.boxSelection.classList.add('boxSelection');
     this.panels = new Set();
     this.springs = new Set();
     this.wires = new Set();
@@ -149,24 +188,27 @@ module.prototype.config = {
     springStiffness: 0.1,
     panelCollision: true,
     borderCollision: true,
-    undoActionLimit: 0
+    undoActionLimit: 0,
+    ondeletion: undefined,
+    onactivation: undefined,
+    onwireconnect: undefined
 };
 
-module.prototype.setSelected = function(node, newValue) {
-    const oldValue = this.selection.has(node),
+module.prototype.setSelected = function(node, selectionMode) {
+    const wasSelected = this.selection.has(node),
           svgElement = eventElementOfNode(node);
-    if(newValue == oldValue)
-        return oldValue;
-    if(newValue == 'toggle')
-        newValue = !oldValue;
-    if(newValue) {
+    if(selectionMode == wasSelected)
+        return wasSelected;
+    if(selectionMode == 'toggle')
+        selectionMode = !wasSelected;
+    if(selectionMode) {
         this.selection.add(node);
         svgElement.classList.add('selected');
     } else {
         this.selection.delete(node);
         svgElement.classList.remove('selected');
     }
-    return newValue;
+    return selectionMode;
 };
 
 module.prototype.deselectAll = function() {
@@ -194,7 +236,6 @@ module.prototype.createWire = function(wire) {
     wire.path.classList.add('fadeIn');
     this.addEventListeners(wire);
     this.wires.add(wire);
-    this.dirtyFlag = true;
     return wire;
 };
 
@@ -215,21 +256,22 @@ module.prototype.connectWire = function(wire) {
     if(!connectSocket(wire.srcSocket, wire.dstPanel) ||
        !connectSocket(wire.dstSocket, wire.srcPanel))
         return;
-    if(wire.srcPanel != wire.dstPanel) {
-        let spring = wire.srcPanel.springs.get(wire.dstPanel);
+    if(wire.srcSocket.panel != wire.dstSocket.panel) {
+        let spring = wire.srcSocket.panel.springs.get(wire.dstSocket.panel);
         if(spring)
             ++spring.referenceCount;
         else {
             spring = {
                 referenceCount: 1,
-                srcPanel: wire.srcPanel,
-                dstPanel: wire.dstPanel
+                srcPanel: wire.srcSocket.panel,
+                dstPanel: wire.dstSocket.panel
             };
-            wire.srcPanel.springs.set(wire.dstPanel, spring);
-            wire.dstPanel.springs.set(wire.srcPanel, spring);
+            wire.srcSocket.panel.springs.set(wire.dstSocket.panel, spring);
+            wire.dstSocket.panel.springs.set(wire.srcSocket.panel, spring);
             this.springs.add(spring);
         }
     }
+    this.dirtyFlag = true;
 };
 
 module.prototype.createPanel = function(panel) {
@@ -252,8 +294,11 @@ module.prototype.createPanel = function(panel) {
         panel.x = rect.width * Math.random();
     if(!panel.y)
         panel.y = rect.height * Math.random();
-    if(!panel.sockets)
+    if(panel.sockets)
+        this.updatePanelSockets(panel);
+    else
         panel.sockets = [];
+    panel.state = 'updateGeometry';
     this.addEventListeners(panel);
     this.panels.add(panel);
     this.dirtyFlag = true;
@@ -268,7 +313,7 @@ module.prototype.updatePanelSockets = function(panel) {
 
     for(let i = 0; i < panel.sockets.length; ++i) {
         const socket = panel.sockets[i];
-        if(socket.deathFlag) {
+        if(socket.state == 'delete') {
             this.dirtyFlag = true;
             this.deleteSocket(socket);
             panel.circleGroup.removeChild(panel.circleGroup.childNodes[i]);
@@ -309,42 +354,42 @@ module.prototype.updatePanelSockets = function(panel) {
 };
 
 module.prototype.updatePanelGeometry = function(panel) {
-    const topAndBottomLine = (this.config.socketsOutside) ? 1 : 2,
-          horizontalSocketPadding = (this.config.horizontalSocketsOutside) ? 1 : 2,
+    const fontOffsetY = this.config.fontSize * 0.3,
+          topAndBottomLine = (this.config.socketsOutside) ? 1 : 2,
+          horizontalSocketPadding = (this.config.horizontalSocketsOutside) ? 2 : 3,
           topLine = (panel.topSockets.length) ? topAndBottomLine : 0,
           bottomLine = (panel.bottomSockets.length) ? topAndBottomLine : 0,
           doubleLineCount = Math.min(panel.leftSockets.length, panel.rightSockets.length),
           singleLineCount = Math.max(panel.leftSockets.length, panel.rightSockets.length),
           totalLineCount = topLine + singleLineCount + bottomLine;
+    for(const socket of panel.sockets)
+        socket.label.width = Math.max(this.config.panelPadding, socket.label.getBBox().width);
 
     let topLineWidth = this.config.panelPadding * (panel.topSockets.length + 1),
         bottomLineWidth = this.config.panelPadding * (panel.bottomSockets.length + 1);
     for(const socket of panel.topSockets)
-        topLineWidth += socket.label.getBBox().width;
+        topLineWidth += socket.label.width;
     for(const socket of panel.bottomSockets)
-        bottomLineWidth += socket.label.getBBox().width;
-    panel.width = Math.max(topLineWidth, bottomLineWidth);
+        bottomLineWidth += socket.label.width;
+    panel.width = Math.max(topLineWidth, bottomLineWidth, this.config.panelPadding * 2);
     for(let i = 0; i < doubleLineCount; ++i)
-        panel.width = Math.max(panel.width, this.config.panelPadding * (horizontalSocketPadding * 2 + 1) + panel.leftSockets[i].label.getBBox().width + panel.rightSockets[i].label.getBBox().width);
+        panel.width = Math.max(panel.width, this.config.panelPadding * (horizontalSocketPadding * 2 - 1) + panel.leftSockets[i].label.width + panel.rightSockets[i].label.width);
     for(let i = doubleLineCount; i < panel.leftSockets.length; ++i)
-        panel.width = Math.max(panel.width, this.config.panelPadding * horizontalSocketPadding + panel.leftSockets[i].label.getBBox().width);
+        panel.width = Math.max(panel.width, this.config.panelPadding * horizontalSocketPadding + panel.leftSockets[i].label.width);
     for(let i = doubleLineCount; i < panel.rightSockets.length; ++i)
-        panel.width = Math.max(panel.width, this.config.panelPadding * horizontalSocketPadding + panel.rightSockets[i].label.getBBox().width);
-    panel.height = totalLineCount * this.config.panelPadding * 2;
+        panel.width = Math.max(panel.width, this.config.panelPadding * horizontalSocketPadding + panel.rightSockets[i].label.width);
+    panel.height = Math.max(totalLineCount, 1) * this.config.panelPadding * 2;
     panel.rect.setAttribute('width', panel.width);
     panel.rect.setAttribute('height', panel.height);
 
     const verticalSockets = function(sockets, lineWidth, sideFactor) {
-        let lastWidth = 0,
-            posX = (panel.width - lineWidth) / 2,
-            posY = Math.round((sideFactor == 1 ? panel.height : 0) + sideFactor * this.config.panelPadding * (this.config.verticalSocketsOutside ? 1 : -1)),
-            labelPosY = Math.round(posY - sideFactor * this.config.panelPadding * 2 + this.config.fontSize * 0.4);
+        let posX = (panel.width - lineWidth) / 2, lastWidth = 0;
+        const posY = Math.round((sideFactor == 1 ? panel.height : 0) + sideFactor * this.config.panelPadding * (this.config.verticalSocketsOutside ? 1 : -1)),
+              labelPosY = Math.round(posY - sideFactor * this.config.panelPadding * 2 + fontOffsetY);
         for(let i = 0; i < sockets.length; ++i) {
-            const socket = sockets[i],
-                  width = socket.label.getBBox().width,
-                  dist = (lastWidth + width) / 2 + this.config.panelPadding;
-            lastWidth = width;
-            posX += dist;
+            const socket = sockets[i];
+            posX += (lastWidth + socket.label.width) / 2 + this.config.panelPadding;
+            lastWidth = socket.label.width;
             socket.circle.x = Math.round(posX);
             socket.circle.y = posY;
             socket.label.setAttribute('x', socket.circle.x);
@@ -361,7 +406,7 @@ module.prototype.updatePanelGeometry = function(panel) {
             socket.circle.x = posX;
             socket.circle.y = ((topLine + i) * 2 + 1) * this.config.panelPadding;
             socket.label.setAttribute('x', labelPosX);
-            socket.label.setAttribute('y', Math.round(socket.circle.y + this.config.fontSize * 0.4));
+            socket.label.setAttribute('y', Math.round(socket.circle.y + fontOffsetY));
             socket.label.setAttribute('text-anchor', (sideFactor == 1) ? 'start' : 'end');
         }
     }.bind(this);
@@ -382,25 +427,41 @@ module.prototype.updatePanelGeometry = function(panel) {
         pathD += 'M0,' + ((totalLineCount - bottomLine) * this.config.panelPadding * 2) + 'h' + panel.width;
     panel.lines.setAttribute('d', pathD);
 
+    delete panel.state;
     return panel;
 };
 
 module.prototype.delete = function(node) {
-    node.deathFlag = true;
+    node.state = 'delete';
+    if(node.type == 'socket')
+        node.panel.state = 'updateSockets';
     this.dirtyFlag = true;
 };
 
+module.prototype.boundingRectOfPanel = function(panel) {
+    const halfWidth = panel.width / 2 + this.config.panelMargin,
+          halfHeight = panel.height / 2 + this.config.panelMargin;
+    return [panel.x - halfWidth, panel.x + halfWidth, panel.y - halfHeight, panel.y + halfHeight];
+};
+
+module.prototype.mousePositionOfEvent = function(event) {
+    const rect = this.svg.getBoundingClientRect();
+    return [event.pageX - rect.left - window.pageXOffset, event.pageY - rect.top - window.pageYOffset];
+};
+
+module.prototype.stabilizeGraph = function() {
+    this.tickCount = 20;
+    if(!this.animationTimer)
+        this.animationTimer = window.setInterval(this.tickGraph.bind(this), 20);
+};
+
 module.prototype.tickGraph = function() {
-    if(--this.tickCount == 0)
+    if(--this.tickCount == 0) {
         window.clearInterval(this.animationTimer);
+        delete this.animationTimer;
+    }
 
-    const boundingRect = function(panel) {
-        const halfWidth = panel.width / 2 + this.config.panelMargin,
-              halfHeight = panel.height / 2 + this.config.panelMargin;
-        return [panel.x - halfWidth, panel.x + halfWidth, panel.y - halfHeight, panel.y + halfHeight];
-    }.bind(this);
-
-    if(this.config.springStiffness != 0)
+    if(this.config.springStiffness > 0)
         for(const spring of this.springs) {
             let vecX = spring.srcPanel.x - spring.dstPanel.x,
                 vecY = spring.srcPanel.y - spring.dstPanel.y;
@@ -422,9 +483,9 @@ module.prototype.tickGraph = function() {
             for(const panelB of this.panels) {
                 if(i <= j)
                     break;
-                const rectA = boundingRect(panelA), rectB = boundingRect(panelB);
-                let overlapX = Math.min(panelA[1], panelB[1]) - Math.max(panelA[0], panelB[0]),
-                    overlapY = Math.min(panelA[3], panelB[3]) - Math.max(panelA[2], panelB[2]);
+                const rectA = this.boundingRectOfPanel(panelA), rectB = this.boundingRectOfPanel(panelB);
+                let overlapX = Math.min(rectA[1], rectB[1]) - Math.max(rectA[0], rectB[0]),
+                    overlapY = Math.min(rectA[3], rectB[3]) - Math.max(rectA[2], rectB[2]);
                 if(overlapX <= 0 || overlapY <= 0)
                     continue;
                 if(Math.abs(overlapX) < Math.abs(overlapY)) {
@@ -447,7 +508,7 @@ module.prototype.tickGraph = function() {
     if(this.config.borderCollision) {
         const rect = this.svg.getBoundingClientRect();
         for(const panel of this.panels) {
-            const panelRect = boundingRect(panel);
+            const panelRect = this.boundingRectOfPanel(panel);
             if(panelRect[0] < 0)
                 panel.x -= panelRect[0];
             else if(panelRect[1] > rect.width)
@@ -477,33 +538,32 @@ module.prototype.tickGraph = function() {
         this.tickWire(wire);
 };
 
-module.prototype.stabilizeGraph = function() {
-    if(this.tickCount > 0)
-        return;
-    this.tickCount = 20;
-    this.animationTimer = window.setInterval(this.tickGraph.bind(this), 20);
-};
-
 module.prototype.syncGraph = function() {
     if(!this.dirtyFlag)
         return;
     this.dirtyFlag = false;
 
     let trash = new Set();
-    for(const panel of this.panels) {
-        if(!panel.deathFlag)
-            continue;
-        for(const socket of panel.sockets)
-            this.deleteSocket(socket);
-        trash.add(panel.group);
-        this.panels.delete(panel);
-        this.selection.delete(panel);
-    }
+    for(const panel of this.panels)
+        switch(panel.state) {
+            case 'updateSockets':
+                this.updatePanelSockets(panel);
+            case 'updateGeometry':
+                this.updatePanelGeometry(panel);
+                break;
+            case 'delete':
+                for(const socket of panel.sockets)
+                    this.deleteSocket(socket);
+                trash.add(panel.group);
+                this.panels.delete(panel);
+                this.selection.delete(panel);
+                break;
+        }
 
     for(const wire of this.wires) {
-        if(!wire.deathFlag)
+        if(wire.state != 'delete')
             continue;
-        if(wire.srcPanel && wire.dstPanel) {
+        if(wire.srcSocket.panel && wire.dstSocket.panel) {
             function disconnectSocket(srcSocket, dstPanel) {
                 if(!srcSocket.wiresPerPanel.has(dstPanel))
                     return false;
@@ -515,15 +575,15 @@ module.prototype.syncGraph = function() {
                     srcSocket.wiresPerPanel.delete(dstPanel);
                 return true;
             }
-            disconnectSocket(wire.srcSocket, wire.dstPanel);
-            disconnectSocket(wire.dstSocket, wire.srcPanel);
-            if(srcPanel != dstPanel) {
-                const spring = srcPanel.springs.get(dstPanel);
+            disconnectSocket(wire.srcSocket, wire.dstSocket.panel);
+            disconnectSocket(wire.dstSocket, wire.srcSocket.panel);
+            if(wire.srcSocket.panel != wire.dstSocket.panel) {
+                const spring = wire.srcSocket.panel.springs.get(wire.dstSocket.panel);
                 if(spring.referenceCount > 1)
                     --spring.referenceCount;
                 else {
-                    srcPanel.springs.delete(dstPanel);
-                    dstPanel.springs.delete(srcPanel);
+                    wire.srcSocket.panel.springs.delete(wire.dstSocket.panel);
+                    wire.dstSocket.panel.springs.delete(wire.srcSocket.panel);
                     this.springs.delete(spring);
                 }
             }
@@ -543,9 +603,7 @@ module.prototype.addEventListeners = function(node) {
     const svgElement = eventElementOfNode(node);
     const mousedown = function(event) {
         this.draggingMoved = false;
-        const rect = this.svg.getBoundingClientRect(),
-              mouseX = event.pageX - rect.left - window.pageXOffset,
-              mouseY = event.pageY - rect.top - window.pageYOffset;
+        const mousePos = this.mousePositionOfEvent(event);
         if(event.shiftKey)
             this.setSelected(node, 'toggle');
         else switch(node.type) {
@@ -555,8 +613,8 @@ module.prototype.addEventListeners = function(node) {
                 for(const node of this.selection)
                     if(node.type == 'panel')
                         this.dragging.set(node, {
-                            x: mouseX - node.x,
-                            y: mouseY - node.y
+                            x: mousePos[0] - node.x,
+                            y: mousePos[1] - node.y
                         });
                 break;
             case 'socket':
@@ -578,14 +636,17 @@ module.prototype.addEventListeners = function(node) {
         if(event.shiftKey)
             return true;
         if(!this.draggingMoved) {
-            if(node.onactivation)
-                node.onactivation(node);
-        } else if(this.dragging.type == 'wire' && node.onwireconnect && node.onwireconnect(node, this.dragging)) {
-            this.dragging.dstSocket = node;
-            this.connectWire(this.dragging);
-            this.tickWire(this.dragging);
-            this.dragging.path.classList.remove('noHover');
-            delete this.dragging;
+            if(this.config.onactivation)
+                this.config.onactivation();
+        } else if(this.dragging.type == 'wire' &&
+                  this.config.onwireconnect) {
+            this.dragging.dstSocket = this.config.onwireconnect(node, this.dragging);
+            if(this.dragging.dstSocket) {
+                this.connectWire(this.dragging);
+                this.stabilizeGraph();
+                this.dragging.path.classList.remove('noHover');
+                delete this.dragging;
+            }
         }
     }.bind(this);
     svgElement.addEventListener('mouseup', mouseup);
@@ -626,7 +687,7 @@ module.prototype.deleteSocket = function(socket) {
     this.selection.delete(socket);
     for(const pair of socket.wiresPerPanel)
         for(const wire of pair[1])
-            wire.deathFlag = true;
+            wire.state = 'delete';
 };
 
 module.prototype.tickWire = function(wire) {

@@ -22,7 +22,7 @@ Features:
     - Touch event handlers for mobile use
     - Move panels
     - Drag / draw wires
-    - Selection
+    - Selection: Click, Shift Invert, Box
 - Keyboard controls
     - Enter: Use / Activate
     - Backspace: Delete

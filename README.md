@@ -27,6 +27,8 @@ Features:
     - Enter: Use / Activate
     - Backspace: Delete
     - Meta (+ Shift) + Z: Undo & Redo
+    - Meta + A: Select all panels
+    - Meta + X / C / V: Clipboard: Cut / Copy / Paste
 
 Example:
 [Try online](http://symatem.github.io) with [source code](https://github.com/Symatem/symatem.github.io/blob/master/js/OntologyEditor.js)

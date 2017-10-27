@@ -1,0 +1,23 @@
+/* Source: http://www.colourlovers.com/palette/1406402/Tron_Legacy_2 */
+
+.WiredPanels {
+    background-color: #0C141F;
+    fill: #E6FFFF;
+}
+
+.WiredPanels .boxSelection {
+    stroke: #E6FFFF;
+    fill: #E6FFFF;
+}
+
+.WiredPanels .panel {
+    stroke: #6FC3DF;
+}
+
+.WiredPanels .socket {
+    stroke: #DF740C;
+}
+
+.WiredPanels .wire {
+    stroke: #FFE64D;
+}

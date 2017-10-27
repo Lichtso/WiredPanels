@@ -35,8 +35,7 @@
     font-size: 12px;
     font-style: normal;
     font-variant: normal;
-    fill: white;
-    color: white;
+    dominant-baseline: central;
     transition: stroke-width 0.15s, stroke-opacity 0.15s;
 }
 

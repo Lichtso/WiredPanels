@@ -4,9 +4,9 @@
 [![Dependency Status](https://david-dm.org/arlac77/WiredPanels.svg)](https://david-dm.org/arlac77/WiredPanels)
 [![devDependency Status](https://david-dm.org/arlac77/WiredPanels/dev-status.svg)](https://david-dm.org/arlac77/WiredPanels#info=devDependencies)
 [![downloads](http://img.shields.io/npm/dm/WiredPanels.svg?style=flat-square)](https://npmjs.org/package/WiredPanels)
+[![Greenkeeper badge](https://badges.greenkeeper.io/arlac77/WiredPanels.svg)](https://greenkeeper.io/)
 
 # WiredPanels
-[![Greenkeeper badge](https://badges.greenkeeper.io/arlac77/WiredPanels.svg)](https://greenkeeper.io/)
 
 Features:
 - Framework to build an Editor or Visualizer

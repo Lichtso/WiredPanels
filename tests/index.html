@@ -1,0 +1,74 @@
+<!DOCTYPE "html">
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <link rel="stylesheet" href="../WiredPanels.css">
+        <link rel="stylesheet" href="../Colors.css">
+        <style type="text/css" media="screen">
+            body {
+                margin: 0px;
+            }
+        </style>
+        <script type="module">
+            import WiredPanels from '../WiredPanels.js';
+            const wiredPanels = new WiredPanels(document.body);
+            wiredPanels.config.onactivation = function(socket) {
+                alert('onactivation');
+            };
+            wiredPanels.config.ondeletion = function(socket) {
+
+            };
+            wiredPanels.config.onwiredrag = function(socket) {
+                return true;
+            };
+            wiredPanels.config.onwireconnect = function(node, wire, nodesToAdd) {
+                if(node.type == 'panel') {
+                    const rect = wiredPanels.boundingRectOfPanel(node),
+                          diffX = wire.dstSocket.primaryElement.x-(rect[0]+rect[1])/2,
+                          diffY = wire.dstSocket.primaryElement.y-(rect[2]+rect[3])/2;
+                    wire.dstSocket = {'panel': node};
+                    if(Math.abs(diffX) == Math.max(Math.abs(diffX), Math.abs(diffY)))
+                        wire.dstSocket.orientation = (diffX < 0) ? 'left' : 'right';
+                    else
+                        wire.dstSocket.orientation = (diffY < 0) ? 'top' : 'bottom';
+                    wiredPanels.createSocket(wire.dstSocket);
+                    wire.dstSocket.label.textContent = 'New';
+                    nodesToAdd.add(wire.dstSocket);
+                } else if(node != wire.srcSocket)
+                    wire.dstSocket = node;
+                return [];
+            };
+            wiredPanels.svg.ondblclick = function(event) {
+                const mousePos = wiredPanels.mousePositionOfEvent(event);
+                const sockets = [], panel = {
+                    'x': mousePos[0],
+                    'y': mousePos[1]
+                };
+                for(let i = 0; i < 3; ++i) {
+                    sockets.push(wiredPanels.createSocket({'panel': panel, 'orientation': 'top'}));
+                    sockets.push(wiredPanels.createSocket({'panel': panel, 'orientation': 'left'}));
+                    if(i < 2) {
+                        sockets.push(wiredPanels.createSocket({'panel': panel, 'orientation': 'right'}));
+                        sockets.push(wiredPanels.createSocket({'panel': panel, 'orientation': 'bottom'}));
+                    }
+                }
+                sockets[0].label.textContent = 'Top 0';
+                sockets[1].label.textContent = 'Left 0';
+                sockets[2].label.textContent = 'Right 0';
+                sockets[3].label.textContent = 'Bottom 0';
+                sockets[4].label.textContent = 'Top 1';
+                sockets[5].label.textContent = 'Left 1';
+                sockets[6].label.textContent = 'Right 1';
+                sockets[7].label.textContent = 'Bottom 1';
+                sockets[8].label.textContent = 'Top 2';
+                sockets[9].label.textContent = 'Left 2';
+                wiredPanels.createPanel(panel);
+                wiredPanels.changeGraphUndoable(new Set([panel, ...sockets]), []);
+                panel.x -= panel.width/2;
+                panel.y -= panel.height/2;
+            };
+        </script>
+    </head>
+    <body>
+    </body>
+</html>

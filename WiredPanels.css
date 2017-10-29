@@ -20,9 +20,11 @@
     -ms-user-select: none;
     user-select: none;
     -o-user-select: none;
+    background-color: #FFFFFF;
+    fill: #000000;
 }
 
-.WiredPanels .ignore {
+.WiredPanels .ignore, .separator {
     pointer-events: none;
 }
 
@@ -31,23 +33,26 @@
 }
 
 .WiredPanels .fadeIn {
-    animation: fadeIn 0.25s linear forwards;
+    animation: fadeIn 0.25s ease-in forwards;
 }
 
 .WiredPanels .fadeOut {
-    animation: fadeOut 0.25s linear forwards;
+    animation: fadeOut 0.25s ease-out forwards;
 }
 
 .WiredPanels .boxSelection {
+    pointer-events: none;
     stroke-width: 1;
     fill-opacity: 0.4;
-    pointer-events: none;
+    stroke: #88DDFF;
+    fill: #88DDFF;
 }
 
 .WiredPanels .panel {
     stroke-width: 1;
     fill: transparent;
-    transition: stroke-width 0.25s /*, width 0.25s, height 0.25s*/;
+    transition: stroke-width 0.25s;
+    stroke: #000000;
 }
 
 .WiredPanels rect.panel.selected {
@@ -68,9 +73,10 @@
 }
 
 .WiredPanels .socket {
+    transition: stroke-width 0.25s;
     stroke-width: 2;
     fill: transparent;
-    transition: stroke-width 0.25s;
+    stroke: #888888;
 }
 
 .WiredPanels .socket.selected {
@@ -82,11 +88,12 @@
 }
 
 .WiredPanels .wire {
+    transition: stroke-opacity 0.25s;
     stroke-linecap: round;
     stroke-width: 4;
     stroke-opacity: 0.6;
-    transition: stroke-opacity 0.25s;
     fill: none;
+    stroke: #AAAAAA;
 }
 
 .WiredPanels .wire:hover {

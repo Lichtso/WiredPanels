@@ -11,12 +11,12 @@
       "semantic-release pre && npm publish && semantic-release post"
   },
   "bugs": {
-    "url": "https://github.com/arlac77/WiredPanels/issues"
+    "url": "https://github.com/Symatem/WiredPanels/issues"
   },
-  "homepage": "https://github.com/arlac77/WiredPanels#readme",
+  "homepage": "https://github.com/Symatem/WiredPanels#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/arlac77/WiredPanels.git"
+    "url": "https://github.com/Symatem/WiredPanels.git"
   },
   "dependencies": {},
   "devDependencies": {

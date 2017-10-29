@@ -2,6 +2,8 @@ const fs = require('fs'),
       path = require('path'),
       http = require('http');
 
+const PORT = 8080;
+
 const server = http.createServer((request, response) => {
     const filePath = (request.url == '/') ? 'index.html' : '..'+request.url;
 
@@ -45,4 +47,7 @@ const server = http.createServer((request, response) => {
     });
 }).on('clientError', (err, socket) => {
     socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
-}).listen(8080);
+}) .listen(PORT, () => {
+    console.log(`open http://localhost:${PORT}/`);
+    console.log(`and double click the pane to start`);
+  });

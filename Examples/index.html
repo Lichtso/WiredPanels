@@ -15,11 +15,11 @@
             wiredPanels.config.onactivation = function() {
                 const panels = new Set();
                 for(const node of wiredPanels.selection)
-                    if(node.type != 'wire') {
+                    if(node.type !== 'wire') {
                         const newLabel = prompt('Label', node.label.textContent);
                         if(newLabel != undefined)
                             node.label.textContent = newLabel;
-                        panels.add((node.type == 'panel') ? node : node.panel);
+                        panels.add((node.type === 'panel') ? node : node.panel);
                     }
                 for(const node of panels)
                     wiredPanels.updatePanelGeometry(node);
@@ -31,19 +31,19 @@
                 return true;
             };
             wiredPanels.config.onwireconnect = function(node, wire, nodesToAdd) {
-                if(node.type == 'panel') {
+                if(node.type === 'panel') {
                     const rect = wiredPanels.boundingRectOfPanel(node),
                           diffX = wire.dstSocket.primaryElement.x-(rect[0]+rect[1])/2,
                           diffY = wire.dstSocket.primaryElement.y-(rect[2]+rect[3])/2;
                     wire.dstSocket = wiredPanels.createSocket();
                     wire.dstSocket.panel = node;
-                    if(Math.abs(diffX) == Math.max(Math.abs(diffX), Math.abs(diffY)))
+                    if(Math.abs(diffX) === Math.max(Math.abs(diffX), Math.abs(diffY)))
                         wire.dstSocket.orientation = (diffX < 0) ? 'left' : 'right';
                     else
                         wire.dstSocket.orientation = (diffY < 0) ? 'top' : 'bottom';
                     wire.dstSocket.label.textContent = 'added';
                     nodesToAdd.add(wire.dstSocket);
-                } else if(node != wire.srcSocket)
+                } else if(node !== wire.srcSocket)
                     wire.dstSocket = node;
                 return [];
             };

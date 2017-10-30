@@ -7,8 +7,7 @@
   "module": "WiredPanels.js",
   "scripts": {
     "xtest": "node test/server.js",
-    "semantic-release":
-      "semantic-release pre && npm publish && semantic-release post"
+    "semantic-release": "semantic-release"
   },
   "bugs": {
     "url": "https://github.com/Symatem/WiredPanels/issues"
@@ -20,6 +19,6 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "semantic-release": "^8.2.2"
+    "semantic-release": "^9.1.0"
   }
 }

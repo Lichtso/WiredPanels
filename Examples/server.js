@@ -2,12 +2,10 @@ const fs = require('fs'),
       path = require('path'),
       http = require('http');
 
-const PORT = 8080;
-
-const server = http.createServer((request, response) => {
-    const filePath = (request.url == '/') ? 'index.html' : '..'+request.url;
-
-    const extname = path.extname(filePath);
+const PORT = 8080,
+      server = http.createServer((request, response) => {
+    const filePath = (request.url == '/') ? 'index.html' : '..'+request.url,
+          extname = path.extname(filePath);
     let contentType = 'text/plain';
     switch(extname) {
         case '.html':
@@ -30,7 +28,6 @@ const server = http.createServer((request, response) => {
             break;
     }
 
-    console.log(filePath, contentType);
     fs.readFile(filePath, function(error, content) {
         if(error) {
             if(error.code == 'ENOENT')
@@ -47,7 +44,6 @@ const server = http.createServer((request, response) => {
     });
 }).on('clientError', (err, socket) => {
     socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
-}) .listen(PORT, () => {
-    console.log(`open http://localhost:${PORT}/`);
-    console.log(`and double click the pane to start`);
-  });
+}).listen(PORT, () => {
+    console.log(`open http://localhost:${PORT}/ and double click the pane to start`);
+});

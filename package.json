@@ -6,7 +6,7 @@
   "description": "Panels with sockets connected by bezier curve wires",
   "module": "WiredPanels.js",
   "scripts": {
-    "xtest": "node test/server.js",
+    "test": "node tests/simple-test.js",
     "semantic-release": "semantic-release"
   },
   "bugs": {
@@ -19,6 +19,11 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "karma": "^1.7.1",
+    "koa": "^2.3.0",
+    "koa-static": "^4.0.1",
+    "make-dir": "^1.1.0",
+    "puppeteer": "^0.12.0",
     "semantic-release": "^9.1.0"
   }
 }

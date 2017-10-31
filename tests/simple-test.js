@@ -17,7 +17,7 @@ async function createServer(port) {
 
 async function runPuppeteer(sd) {
   const browser = await puppeteer.launch({
-    headless: true
+    headless: false
     //  args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
   const page = await browser.newPage();
@@ -28,6 +28,9 @@ async function runPuppeteer(sd) {
   });
 
   await page.goto(`http://localhost:${PORT}/tests/index.html`);
+
+  await page.mouse.click(200, 100, { clickCount: 2, delay: 50 });
+
   await page.screenshot({ path: path.join(sd, 'example.png') });
 
   await browser.close();

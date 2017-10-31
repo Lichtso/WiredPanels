@@ -15,7 +15,7 @@ function animateVisibility(svgElement, visible) {
     }
 }
 
-function animateElementDeletion(svgElements, panels) {
+function animateElementRemoval(svgElements, panels) {
     for(const svgElement of svgElements)
         animateVisibility(svgElement, false);
     window.setTimeout(function() {
@@ -46,7 +46,7 @@ function setupEventListeners(node) {
                             });
                     break;
                 case 'socket':
-                    if(!this.config.onwiredrag || !this.config.onwiredrag(node))
+                    if(!this.eventListeners.wireDrag || !this.eventListeners.wireDrag(node))
                         break;
                     this.dragging = {
                         srcSocket: node,
@@ -62,15 +62,15 @@ function setupEventListeners(node) {
     node.primaryElement.addEventListener('touchstart', mousedown);
     const mouseup = function(event) {
         if(!this.draggingMoved) {
-            if(!event.shiftKey && this.config.onactivation)
-                this.config.onactivation();
+            if(!event.shiftKey && this.eventListeners.activate)
+                this.eventListeners.activate();
         } else if(this.dragging.type == 'wire' &&
-                  this.config.onwireconnect) {
+                  this.eventListeners.wireConnect) {
             const nodesToAdd = new Set([this.dragging]);
-            this.config.onwireconnect(node, this.dragging, nodesToAdd);
+            let callback = this.eventListeners.wireConnect(node, this.dragging, nodesToAdd);
             if(this.dragging.dstSocket.type == 'socket') {
                 this.dragging.primaryElement.classList.remove('ignore');
-                this.changeGraphUndoable(nodesToAdd, []);
+                this.changeGraphUndoable(nodesToAdd, [], callback);
                 delete this.dragging;
             }
         }
@@ -119,27 +119,28 @@ function tickWire(wire) {
 }
 
 function deleteSelected(event) {
-    if(this.config.ondeletion)
-        this.config.ondeletion();
-    this.changeGraphUndoable([], new Set(this.selection));
+    let callback;
+    if(this.eventListeners.remove)
+        callback = this.eventListeners.remove();
+    this.changeGraphUndoable([], new Set(this.selection), callback);
 }
 
 export default class WiredPanels {
-    constructor(parentElement,config={}) {
+    constructor(parentElement, config={}, eventListeners={}) {
         const acceptClipboard = function(event) {
-            if(!this.config.onacceptclipboard)
+            if(!this.eventListeners.acceptClipboard)
                 return false;
             event.stopPropagation();
-            if(!this.config.onacceptclipboard(event.dataTransfer))
+            if(!this.eventListeners.acceptClipboard(event.dataTransfer))
                 return false;
             event.preventDefault();
             return true;
         }.bind(this);
         const copy = function(event) {
-            if(!this.config.oncopy)
+            if(!this.eventListeners.copy)
                 return false;
             event.stopPropagation();
-            if(!this.config.oncopy(event.clipboardData))
+            if(!this.eventListeners.copy(event.clipboardData))
                 return false;
             event.preventDefault();
             return true;
@@ -150,11 +151,11 @@ export default class WiredPanels {
         }.bind(this);
         const paste = function(event) {
             if(acceptClipboard(event))
-                this.config.onpaste(event.clipboardData);
+                this.eventListeners.paste(event.clipboardData);
         }.bind(this);
         const drop = function(event) {
             if(acceptClipboard(event))
-                this.config.onpaste(event.dataTransfer);
+                this.eventListeners.paste(event.dataTransfer);
         }.bind(this);
         const dragover = function(event) {
             if(acceptClipboard(event))
@@ -169,9 +170,9 @@ export default class WiredPanels {
                     deleteSelected.call(this);
                     break;
                 case 13: // Enter
-                    if(!this.config.onactivation)
+                    if(!this.eventListeners.activate)
                         return;
-                    this.config.onactivation();
+                    this.eventListeners.activate();
                     break;
                 case 90: // Meta (+ Shift) + Z
                     if(!event.metaKey)
@@ -278,7 +279,7 @@ export default class WiredPanels {
             else {
                 this.setSelected([this.dragging.srcSocket], false);
                 if(this.dragging.type == 'wire')
-                    animateElementDeletion.call(this, [this.dragging.primaryElement]);
+                    animateElementRemoval.call(this, [this.dragging.primaryElement]);
             }
             this.draggingMoved = false;
             delete this.dragging;
@@ -349,7 +350,8 @@ export default class WiredPanels {
             panelCollision: true,
             borderCollision: true,
             undoActionLimit: 0
-        },config);
+        }, config);
+        this.eventListeners = eventListeners;
     }
 
     setSelected(nodes, selectionMode) {
@@ -367,16 +369,6 @@ export default class WiredPanels {
                 node.primaryElement.classList.remove('selected');
             }
         }
-    }
-
-    undoableAction(action) {
-        this.actionStack = this.actionStack.slice(0, this.actionIndex);
-        this.actionStack.push(action);
-        if(this.config.undoActionLimit > 0 && this.actionStack.length > this.config.undoActionLimit) {
-            this.actionStack = this.actionStack.slice(this.actionStack.length - this.config.undoActionLimit);
-            this.actionIndex = this.actionStack.length;
-        }
-        this.actionStack[this.actionIndex++](true);
     }
 
     createWire(wire = {}) {
@@ -636,8 +628,20 @@ export default class WiredPanels {
         tickGraph(lastTime);
     }
 
-    changeGraphUndoable(nodesToAdd, nodesToRemove) {
+    undoableAction(action) {
+        this.actionStack = this.actionStack.slice(0, this.actionIndex);
+        this.actionStack.push(action);
+        if(this.config.undoActionLimit > 0 && this.actionStack.length > this.config.undoActionLimit) {
+            this.actionStack = this.actionStack.slice(this.actionStack.length - this.config.undoActionLimit);
+            this.actionIndex = this.actionStack.length;
+        }
+        this.actionStack[this.actionIndex++](true);
+    }
+
+    changeGraphUndoable(nodesToAdd, nodesToRemove, callback) {
         this.undoableAction(function(forward) {
+            if(callback)
+                callback(forward);
             if(forward)
                 this.changeGraph(nodesToAdd, nodesToRemove);
             else
@@ -768,7 +772,7 @@ export default class WiredPanels {
         }
         for(const panel of panelsToUpdateA)
             this.updatePanelSockets(panel);
-        animateElementDeletion.call(this, svgElementsToRemove, panelsToUpdateR);
+        animateElementRemoval.call(this, svgElementsToRemove, panelsToUpdateR);
         this.stabilizeGraph();
     }
 }

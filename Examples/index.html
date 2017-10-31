@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8"/>
         <link rel="stylesheet" href="../WiredPanels.css">
-        <link rel="stylesheet" href="../colors/MonochromeSepia.css">
+        <link rel="stylesheet" href="../Colors/MonochromeSepia.css">
         <style type="text/css" media="screen">
             body {
                 margin: 0px;
@@ -11,42 +11,39 @@
         </style>
         <script type="module">
             import WiredPanels from '../WiredPanels.js';
-            const wiredPanels = new WiredPanels(document.body);
-            wiredPanels.config.onactivation = function() {
-                const panels = new Set();
-                for(const node of wiredPanels.selection)
-                    if(node.type !== 'wire') {
-                        const newLabel = prompt('Label', node.label.textContent);
-                        if(newLabel != undefined)
-                            node.label.textContent = newLabel;
-                        panels.add((node.type === 'panel') ? node : node.panel);
-                    }
-                for(const node of panels)
-                    wiredPanels.updatePanelGeometry(node);
-            };
-            wiredPanels.config.ondeletion = function() {
-
-            };
-            wiredPanels.config.onwiredrag = function(socket) {
-                return true;
-            };
-            wiredPanels.config.onwireconnect = function(node, wire, nodesToAdd) {
-                if(node.type === 'panel') {
-                    const rect = wiredPanels.boundingRectOfPanel(node),
-                          diffX = wire.dstSocket.primaryElement.x-(rect[0]+rect[1])/2,
-                          diffY = wire.dstSocket.primaryElement.y-(rect[2]+rect[3])/2;
-                    wire.dstSocket = wiredPanels.createSocket();
-                    wire.dstSocket.panel = node;
-                    if(Math.abs(diffX) === Math.max(Math.abs(diffX), Math.abs(diffY)))
-                        wire.dstSocket.orientation = (diffX < 0) ? 'left' : 'right';
-                    else
-                        wire.dstSocket.orientation = (diffY < 0) ? 'top' : 'bottom';
-                    wire.dstSocket.label.textContent = 'added';
-                    nodesToAdd.add(wire.dstSocket);
-                } else if(node !== wire.srcSocket)
-                    wire.dstSocket = node;
-                return [];
-            };
+            const wiredPanels = new WiredPanels(document.body, {}, {
+                'activate': function() {
+                    const panels = new Set();
+                    for(const node of wiredPanels.selection)
+                        if(node.type !== 'wire') {
+                            const newLabel = prompt('Label', node.label.textContent);
+                            if(newLabel != undefined)
+                                node.label.textContent = newLabel;
+                            panels.add((node.type === 'panel') ? node : node.panel);
+                        }
+                    for(const node of panels)
+                        wiredPanels.updatePanelGeometry(node);
+                },
+                'wireDrag': function(socket) {
+                    return true;
+                },
+                'wireConnect': function(node, wire, nodesToAdd) {
+                    if(node.type === 'panel') {
+                        const rect = wiredPanels.boundingRectOfPanel(node),
+                              diffX = wire.dstSocket.primaryElement.x-(rect[0]+rect[1])/2,
+                              diffY = wire.dstSocket.primaryElement.y-(rect[2]+rect[3])/2;
+                        wire.dstSocket = wiredPanels.createSocket();
+                        wire.dstSocket.panel = node;
+                        if(Math.abs(diffX) === Math.max(Math.abs(diffX), Math.abs(diffY)))
+                            wire.dstSocket.orientation = (diffX < 0) ? 'left' : 'right';
+                        else
+                            wire.dstSocket.orientation = (diffY < 0) ? 'top' : 'bottom';
+                        wire.dstSocket.label.textContent = 'added';
+                        nodesToAdd.add(wire.dstSocket);
+                    } else if(node !== wire.srcSocket)
+                        wire.dstSocket = node;
+                }
+            });
             wiredPanels.svg.ondblclick = function(event) {
                 const mousePos = wiredPanels.mousePositionOfEvent(event),
                       panel = wiredPanels.createPanel(), sockets = [];

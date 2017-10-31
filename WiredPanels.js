@@ -125,7 +125,7 @@ function deleteSelected(event) {
 }
 
 export default class WiredPanels {
-    constructor(parentElement) {
+    constructor(parentElement,config={}) {
         const acceptClipboard = function(event) {
             if(!this.config.onacceptclipboard)
                 return false;
@@ -336,7 +336,7 @@ export default class WiredPanels {
         this.tickCount = 0;
         this.actionStack = [];
         this.actionIndex = 0;
-        this.config = {
+        this.config = Object.assign({
             socketRadius: 5,
             verticalSocketsOutside: false,
             horizontalSocketsOutside: false,
@@ -348,15 +348,8 @@ export default class WiredPanels {
             springStiffness: 0.1,
             panelCollision: true,
             borderCollision: true,
-            undoActionLimit: 0,
-            ondeletion: undefined,
-            onactivation: undefined,
-            onwiredrag: undefined,
-            onwireconnect: undefined,
-            oncopy: undefined,
-            onpaste: undefined,
-            onacceptclipboard: undefined
-        };
+            undoActionLimit: 0
+        },config);
     }
 
     setSelected(nodes, selectionMode) {

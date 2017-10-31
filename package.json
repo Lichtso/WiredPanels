@@ -1,7 +1,10 @@
 {
   "name": "WiredPanels",
   "version": "0.0.0-semantic-release",
-  "authors": ["Alexander Meißner", "Markus Felten"],
+  "authors": [
+    "Alexander Meißner",
+    "Markus Felten"
+  ],
   "license": "MIT",
   "description": "Panels with sockets connected by bezier curve wires",
   "module": "WiredPanels.js",
@@ -19,7 +22,6 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "karma": "^1.7.1",
     "koa": "^2.3.0",
     "koa-static": "^4.0.1",
     "make-dir": "^1.1.0",

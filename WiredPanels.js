@@ -39,7 +39,7 @@ function setupEventListeners(node) {
                 case 'panel':
                     this.dragging = new Map();
                     for(const node of this.selection)
-                        if(node.type == 'panel')
+                        if(node.type === 'panel')
                             this.dragging.set(node, {
                                 x: mousePos[0] - node.x,
                                 y: mousePos[1] - node.y
@@ -64,11 +64,11 @@ function setupEventListeners(node) {
         if(!this.draggingMoved) {
             if(!event.shiftKey && this.eventListeners.activate)
                 this.eventListeners.activate();
-        } else if(this.dragging.type == 'wire' &&
+        } else if(this.dragging.type === 'wire' &&
                   this.eventListeners.wireConnect) {
             const nodesToAdd = new Set([this.dragging]);
             let callback = this.eventListeners.wireConnect(node, this.dragging, nodesToAdd);
-            if(this.dragging.dstSocket.type == 'socket') {
+            if(this.dragging.dstSocket.type === 'socket') {
                 this.dragging.primaryElement.classList.remove('ignore');
                 this.changeGraphUndoable(nodesToAdd, [], callback);
                 delete this.dragging;
@@ -119,7 +119,7 @@ function tickWire(wire) {
 }
 
 function deleteSelected(event) {
-    if(this.selection.size == 0)
+    if(this.selection.size === 0)
         return;
     let callback;
     if(this.eventListeners.remove)
@@ -166,14 +166,14 @@ export default class WiredPanels {
         }.bind(this);
 
         const keydown = function(event) {
-            if(this.svg.parentNode.querySelector('svg:hover') == null || event.ctrlKey)
+            if(this.svg.parentNode.querySelector('svg:hover') === null || event.ctrlKey)
                 return;
             switch(event.keyCode) {
                 case 8: // Backspace
                     deleteSelected.call(this);
                     break;
                 case 13: // Enter
-                    if(this.selection.size == 0 || !this.eventListeners.activate)
+                    if(this.selection.size === 0 || !this.eventListeners.activate)
                         return;
                     this.eventListeners.activate();
                     break;
@@ -219,7 +219,7 @@ export default class WiredPanels {
                 return;
             this.draggingMoved = true;
             const mousePos = this.mousePositionOfEvent((event.touches) ? event.touches[0] : event);
-            if(this.dragging == this.boxSelection) {
+            if(this.dragging === this.boxSelection) {
                 this.boxSelection.minX = Math.min(this.boxSelection.originX, mousePos[0]);
                 this.boxSelection.minY = Math.min(this.boxSelection.originY, mousePos[1]);
                 this.boxSelection.maxX = Math.max(this.boxSelection.originX, mousePos[0]);
@@ -235,7 +235,7 @@ export default class WiredPanels {
                 }
                 this.stabilizeGraph();
             } else {
-                if(this.dragging.type != 'wire') {
+                if(this.dragging.type !== 'wire') {
                     this.createWire(this.dragging);
                     this.dragging.primaryElement.classList.add('ignore');
                     this.wiresGroup.appendChild(this.dragging.primaryElement);
@@ -251,11 +251,11 @@ export default class WiredPanels {
         const mouseup = function(event) {
             if(event.button > 0)
                 return;
-            if(!event.shiftKey && (!this.dragging || this.dragging == this.boxSelection))
+            if(!event.shiftKey && (!this.dragging || this.dragging === this.boxSelection))
                 this.setSelected(this.selection, false);
             if(!this.dragging)
                 return;
-            if(this.dragging == this.boxSelection) {
+            if(this.dragging === this.boxSelection) {
                 animateVisibility(this.boxSelection, false);
                 if(this.draggingMoved) {
                     const isSocketInBoxSelection = function(socket) {
@@ -281,7 +281,7 @@ export default class WiredPanels {
                 this.setSelected(this.dragging.keys(), false);
             else {
                 this.setSelected([this.dragging.srcSocket], false);
-                if(this.dragging.type == 'wire')
+                if(this.dragging.type === 'wire')
                     animateElementRemoval.call(this, [this.dragging.primaryElement]);
             }
             this.draggingMoved = false;
@@ -360,9 +360,9 @@ export default class WiredPanels {
     setSelected(nodes, selectionMode) {
         for(const node of nodes) {
             const wasSelected = this.selection.has(node);
-            if(selectionMode == wasSelected)
+            if(selectionMode === wasSelected)
                 continue;
-            if(selectionMode == 'toggle')
+            if(selectionMode === 'toggle')
                 selectionMode = !wasSelected;
             if(selectionMode) {
                 this.selection.add(node);
@@ -493,7 +493,7 @@ export default class WiredPanels {
         panel.label.setAttribute('text-anchor', 'middle');
         const verticalSockets = function(sockets, lineWidth, sideFactor) {
             let posX = (panel.width - lineWidth) / 2, lastWidth = 0;
-            const posY = Math.round((sideFactor == -1 ? panel.height : 0) - sideFactor * this.config.panelPadding * (this.config.verticalSocketsOutside ? 1 : -1)),
+            const posY = Math.round((sideFactor === -1 ? panel.height : 0) - sideFactor * this.config.panelPadding * (this.config.verticalSocketsOutside ? 1 : -1)),
                   labelPosY = Math.round(sideFactor * this.config.panelPadding * (this.config.socketsOutside ? 2 : 1.5));
             for(let i = 0; i < sockets.length; ++i) {
                 const socket = sockets[i];
@@ -508,7 +508,7 @@ export default class WiredPanels {
         }.bind(this);
         const horizontalSockets = function(sockets, sideFactor) {
             const paddingFactor = (this.config.horizontalSocketsOutside) ? 1 : 0,
-                  posX = Math.round((sideFactor == -1 ? panel.width : 0) + sideFactor * (1 - 2 * paddingFactor) * this.config.panelPadding),
+                  posX = Math.round((sideFactor === -1 ? panel.width : 0) + sideFactor * (1 - 2 * paddingFactor) * this.config.panelPadding),
                   labelPosX = Math.round(sideFactor * (1 + paddingFactor) * this.config.panelPadding);
             for(let i = 0; i < sockets.length; ++i) {
                 const socket = sockets[i];
@@ -516,7 +516,7 @@ export default class WiredPanels {
                 socket.y = ((topLine + nameLine + i) * 2 + 1) * this.config.panelPadding;
                 socket.label.setAttribute('x', labelPosX);
                 socket.label.setAttribute('y', 0);
-                socket.label.setAttribute('text-anchor', (sideFactor == 1) ? 'start' : 'end');
+                socket.label.setAttribute('text-anchor', (sideFactor === 1) ? 'start' : 'end');
             }
         }.bind(this);
         verticalSockets(panel.topSockets, topLineWidth, 1);
@@ -662,7 +662,7 @@ export default class WiredPanels {
             switch(node.type) {
                 case 'socket':
                     panelsToUpdateA.add(node.panel);
-                    if(node.index == undefined)
+                    if(node.index === undefined)
                         node.panel.sockets.push(node);
                     else
                         node.panel.sockets.splice(node.index, 0, node);
@@ -671,7 +671,7 @@ export default class WiredPanels {
                     break;
                 case 'wire':
                     this.wires.add(node);
-                    if(node != this.dragging)
+                    if(node !== this.dragging)
                         this.wiresGroup.appendChild(node.primaryElement);
                     animateVisibility(node.primaryElement, true);
                     function connectSocket(srcSocket, dstPanel) {
@@ -690,7 +690,7 @@ export default class WiredPanels {
                     if(!connectSocket(node.srcSocket, node.dstSocket.panel) ||
                        !connectSocket(node.dstSocket, node.srcSocket.panel))
                         console.error('Wire was already connected', wire);
-                    if(node.srcSocket.panel != node.dstSocket.panel) {
+                    if(node.srcSocket.panel !== node.dstSocket.panel) {
                         let spring = node.srcSocket.panel.springs.get(node.dstSocket.panel);
                         if(spring)
                             ++spring.referenceCount;
@@ -719,7 +719,7 @@ export default class WiredPanels {
                     nodesToRemove.add(wire);
         }.bind(this);
         for(const node of nodesToRemove)
-            if(node.type == 'socket') {
+            if(node.type === 'socket') {
                 if(nodesToRemove.has(node.panel)) {
                     nodesToRemove.delete(node);
                     node.primaryElement.classList.remove('selected');
@@ -746,14 +746,14 @@ export default class WiredPanels {
                         if(!set.has(node))
                             return false;
                         set.delete(node);
-                        if(set.size == 0)
+                        if(set.size === 0)
                             srcSocket.wiresPerPanel.delete(dstPanel);
                         return true;
                     }
                     if(!disconnectSocket(node.srcSocket, node.dstSocket.panel) ||
                        !disconnectSocket(node.dstSocket, node.srcSocket.panel))
                         console.error('Wire was already disconnected', node);
-                    if(node.srcSocket.panel != node.dstSocket.panel) {
+                    if(node.srcSocket.panel !== node.dstSocket.panel) {
                         const spring = node.srcSocket.panel.springs.get(node.dstSocket.panel);
                         if(spring.referenceCount > 1)
                             --spring.referenceCount;

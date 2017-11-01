@@ -119,10 +119,13 @@ function tickWire(wire) {
 }
 
 function deleteSelected(event) {
+    if(this.selection.size == 0)
+        return;
     let callback;
     if(this.eventListeners.remove)
         callback = this.eventListeners.remove();
-    this.changeGraphUndoable([], new Set(this.selection), callback);
+    if(this.selection.size > 0)
+        this.changeGraphUndoable([], new Set(this.selection), callback);
 }
 
 export default class WiredPanels {
@@ -170,7 +173,7 @@ export default class WiredPanels {
                     deleteSelected.call(this);
                     break;
                 case 13: // Enter
-                    if(!this.eventListeners.activate)
+                    if(this.selection.size == 0 || !this.eventListeners.activate)
                         return;
                     this.eventListeners.activate();
                     break;
@@ -717,8 +720,9 @@ export default class WiredPanels {
         }.bind(this);
         for(const node of nodesToRemove)
             if(node.type == 'socket') {
-                if(nodesToRemove.has(node.parent)) {
-                    nodesToRemove.remove(node);
+                if(nodesToRemove.has(node.panel)) {
+                    nodesToRemove.delete(node);
+                    node.primaryElement.classList.remove('selected');
                     continue;
                 }
                 node.index = node.panel.sockets.indexOf(node);

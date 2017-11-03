@@ -472,7 +472,7 @@ export default class WiredPanels {
               doubleLineCount = Math.min(panel.leftSockets.length, panel.rightSockets.length),
               totalLine = Math.max(topLine + nameLine + Math.max(panel.leftSockets.length, panel.rightSockets.length) + bottomLine, 1);
         for(const socket of panel.sockets)
-            socket.label.width = Math.max(this.config.panelPadding, socket.label.getBBox().width);
+            socket.label.width = Math.max(this.config.panelPadding, socket.label.getComputedTextLength());
         let topLineWidth = this.config.panelPadding * (panel.topSockets.length + 1),
             bottomLineWidth = this.config.panelPadding * (panel.bottomSockets.length + 1);
         for(const socket of panel.topSockets)

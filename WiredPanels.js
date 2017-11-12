@@ -689,7 +689,7 @@ export default class WiredPanels {
                     }
                     if(!connectSocket(node.srcSocket, node.dstSocket.panel) ||
                        !connectSocket(node.dstSocket, node.srcSocket.panel))
-                        console.error('Wire was already connected', wire);
+                        console.error('Wire was already connected', node);
                     if(node.srcSocket.panel !== node.dstSocket.panel) {
                         let spring = node.srcSocket.panel.springs.get(node.dstSocket.panel);
                         if(spring)

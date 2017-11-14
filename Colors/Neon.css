@@ -1,25 +1,10 @@
-.WiredPanels {
-    background-color: #001122;
-    fill: #FFFFFF;
-}
-
-.WiredPanels .boxSelection {
-    stroke: #FFFFFF;
-    fill: #FFFFFF;
-}
-
-.WiredPanels .panel {
-    stroke: #44DDFF;
-}
-
-.WiredPanels .separator {
-    fill: #44DDFF;
-}
-
-.WiredPanels .socket {
-    stroke: #FF7700;
-}
-
-.WiredPanels .wire {
-    stroke: #FFDD44;
+:root {
+    --background-color: #001122;
+    --text-color: #FFFFFF;
+    --box-selection-color: #FFFFFF;
+    --panel-fill: transparent;
+    --panel-stroke: #44DDFF;
+    --socket-fill: transparent;
+    --socket-stroke: #FF7700;
+    --wire-stroke: #FFDD44;
 }

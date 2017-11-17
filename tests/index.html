@@ -11,7 +11,8 @@
         </style>
         <script type="module">
 import WiredPanels from '../WiredPanels.js';
-const wiredPanels = new WiredPanels(document.body);
+const wiredPanels = new WiredPanels();
+document.body.appendChild(wiredPanels.svg);
 
 const panel = wiredPanels.createPanel(),
   sockets = [];

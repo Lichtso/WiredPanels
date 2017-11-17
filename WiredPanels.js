@@ -134,7 +134,7 @@ function tickWire(wire) {
 }
 
 export default class WiredPanels {
-    constructor(parentElement, config={}, eventListeners={}) {
+    constructor(config={}, eventListeners={}) {
         const copy = function(event) {
             if(!this.eventListeners.copy || !this.eventListeners.copy(event.clipboardData))
                 return false;
@@ -289,9 +289,7 @@ export default class WiredPanels {
         document.body.addEventListener('drop', paste);
         document.body.addEventListener('dragover', dragover);
         document.body.addEventListener('keydown', keydown);
-        while(parentElement.getElementsByClassName('fallback').length > 0)
-            parentElement.removeChild(parentElement.getElementsByClassName('fallback')[0]);
-        this.svg = createElement('svg', parentElement);
+        this.svg = createElement('svg');
         this.svg.classList.add('WiredPanels');
         this.svg.addEventListener('mousedown', mousedown);
         this.svg.addEventListener('touchstart', mousedown);

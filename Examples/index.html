@@ -11,7 +11,7 @@
         </style>
         <script type="module">
             import WiredPanels from '../WiredPanels.js';
-            const wiredPanels = new WiredPanels(document.body, {}, {
+            const wiredPanels = new WiredPanels({}, {
                 'activate': function() {
                     const panels = new Set();
                     for(const node of wiredPanels.selection)
@@ -59,6 +59,7 @@
                 }
                 wiredPanels.changeGraphUndoable(new Set([panel, ...sockets]), []);
             };
+            document.body.appendChild(wiredPanels.svg);
         </script>
     </head>
     <body>

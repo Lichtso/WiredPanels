@@ -81,8 +81,8 @@ function setupEventListeners(node) {
                 this.eventListeners.activate();
         } else if(this.dragging.type === 'wire' &&
                   this.eventListeners.wireConnect) {
-            const nodesToAdd = new Set([this.dragging]);
-            let callback = this.eventListeners.wireConnect(node, this.dragging, nodesToAdd);
+            const nodesToAdd = new Set([this.dragging]),
+                  callback = this.eventListeners.wireConnect(node, this.dragging, nodesToAdd);
             if(this.dragging.dstSocket.type === 'socket') {
                 this.dragging.primaryElement.classList.remove('ignore');
                 this.changeGraphUndoable(nodesToAdd, [], callback);
@@ -161,31 +161,38 @@ export default class WiredPanels {
         const keydown = function(event) {
             if(this.svg.parentNode.querySelector('svg:hover') === null || event.ctrlKey)
                 return;
-            switch(event.keyCode) {
-                case 8: // Backspace
-                    this.deleteSelected();
-                    break;
-                case 13: // Enter
-                    if(this.selection.size === 0 || !this.eventListeners.activate)
+            if(event.metaKey)
+                switch(event.keyCode) {
+                    case 90: // Meta (+ Shift) + Z
+                        if(event.shiftKey)
+                            this.redo();
+                        else
+                            this.undo();
+                        break;
+                    case 65: // Meta + A
+                        this.setSelected(this.panels, true);
+                        break;
+                    default: {
+                        const eventListener = this.eventListeners['meta'+String.fromCharCode(event.keyCode)];
+                        if(eventListener)
+                            eventListener(event);
+                        else
+                            return;
+                    } break;
+                }
+            else
+                switch(event.keyCode) {
+                    case 8: // Backspace
+                        this.deleteSelected();
+                        break;
+                    case 13: // Enter
+                        if(this.selection.size === 0 || !this.eventListeners.activate)
+                            return;
+                        this.eventListeners.activate();
+                        break;
+                    default:
                         return;
-                    this.eventListeners.activate();
-                    break;
-                case 90: // Meta (+ Shift) + Z
-                    if(!event.metaKey)
-                        return;
-                    if(event.shiftKey)
-                        this.redo();
-                    else
-                        this.undo();
-                    break;
-                case 65: // Meta + A
-                    if(!event.metaKey)
-                        return;
-                    this.setSelected(this.panels, true);
-                    break;
-                default:
-                    return;
-            }
+                }
             event.stopPropagation();
             event.preventDefault();
         }.bind(this);

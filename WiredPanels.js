@@ -47,9 +47,9 @@ function setupEventListeners(node) {
         this.draggingMoved = false;
         const mousePos = this.mousePositionOfEvent((event.touches) ? event.touches[0] : event);
         if(event.shiftKey)
-            this.setSelected([node], 'toggle');
+            this.setNodeSelected(node, 'toggle');
         else {
-            this.setSelected([node], true);
+            this.setNodeSelected(node, true);
             switch(node.type) {
                 case 'panel':
                     this.dragging = new Map();
@@ -170,7 +170,7 @@ export default class WiredPanels {
                             this.undo();
                         break;
                     case 65: // Meta + A
-                        this.setSelected(this.panels, true);
+                        this.setNodesSelected(this.panels, true);
                         break;
                     default: {
                         const eventListener = this.eventListeners['meta'+String.fromCharCode(event.keyCode)];
@@ -268,12 +268,12 @@ export default class WiredPanels {
                     for(const wire of this.wires)
                         if(isSocketInBoxSelection(wire.srcSocket) && isSocketInBoxSelection(wire.dstSocket))
                             nodes.add(wire);
-                    this.setSelected(nodes, (event.shiftKey) ? 'toggle' : true);
+                    this.setNodesSelected(nodes, (event.shiftKey) ? 'toggle' : true);
                 }
             } else if(this.dragging instanceof Map)
-                this.setSelected(this.dragging.keys(), false);
+                this.setNodesSelected(this.dragging.keys(), false);
             else {
-                this.setSelected([this.dragging.srcSocket], false);
+                this.setNodeSelected(this.dragging.srcSocket, false);
                 if(this.dragging.type === 'wire')
                     animateRemoval.call(this, [this.dragging]);
             }
@@ -286,7 +286,7 @@ export default class WiredPanels {
             if(event.button > 0)
                 return;
             if(!event.shiftKey && (!this.dragging || this.dragging === this.boxSelection))
-                this.setSelected(this.selection, false);
+                this.setNodesSelected(this.selection, false);
             mouseleave(event);
         }.bind(this);
 
@@ -355,21 +355,24 @@ export default class WiredPanels {
         this.eventListeners = eventListeners;
     }
 
-    setSelected(nodes, selectionMode) {
-        for(const node of nodes) {
-            const wasSelected = this.selection.has(node);
-            if(selectionMode === wasSelected)
-                continue;
-            if(selectionMode === 'toggle')
-                selectionMode = !wasSelected;
-            if(selectionMode) {
-                this.selection.add(node);
-                node.primaryElement.classList.add('selected');
-            } else {
-                this.selection.delete(node);
-                node.primaryElement.classList.remove('selected');
-            }
+    setNodeSelected(node, selectionMode) {
+        const wasSelected = this.selection.has(node);
+        if(selectionMode === wasSelected)
+            return;
+        if(selectionMode === 'toggle')
+            selectionMode = !wasSelected;
+        if(selectionMode) {
+            this.selection.add(node);
+            node.primaryElement.classList.add('selected');
+        } else {
+            this.selection.delete(node);
+            node.primaryElement.classList.remove('selected');
         }
+    }
+
+    setNodesSelected(nodes, selectionMode) {
+        for(const node of nodes)
+            this.setNodeSelected(node, selectionMode);
     }
 
     deleteSelected() {
@@ -378,7 +381,7 @@ export default class WiredPanels {
         let callback;
         if(this.eventListeners.remove)
             callback = this.eventListeners.remove();
-        if(this.selection.size > 0)
+        if(this.selection.size > 0 || callback)
             this.changeGraphUndoable([], new Set(this.selection), callback);
     }
 
@@ -673,8 +676,6 @@ export default class WiredPanels {
     changeGraph(nodesToAdd, nodesToRemove) {
         const panelsToUpdate = new Set();
         for(const node of nodesToAdd) {
-            if(node.primaryElement.classList.contains('selected'))
-                this.selection.add(node);
             switch(node.type) {
                 case 'socket':
                     panelsToUpdate.add(node.panel);
@@ -726,23 +727,27 @@ export default class WiredPanels {
                     this.panels.add(node);
                     this.panelsGroup.appendChild(node.group);
                     animateVisibility(node.group, true);
+                    for(const socket of node.sockets)
+                        socket.primaryElement.classList.remove('selected');
                     break;
             }
+            node.primaryElement.classList.remove('selected');
         }
-        const deleteSocket = function(socket) {
+        for(const node of nodesToRemove)
+            switch(node.type) {
+                case 'socket':
+                    node.index = node.panel.sockets.indexOf(node);
+                    break;
+                case 'panel':
+                    for(const socket of node.sockets)
+                        this.selection.delete(socket);
+                    break;
+            }
+        function deleteSocket(socket) {
             for(const [panel, wires] of socket.wiresPerPanel)
                 for(const wire of wires)
                     nodesToRemove.add(wire);
-        }.bind(this);
-        for(const node of nodesToRemove)
-            if(node.type === 'socket') {
-                if(nodesToRemove.has(node.panel)) {
-                    nodesToRemove.delete(node);
-                    node.primaryElement.classList.remove('selected');
-                    continue;
-                }
-                node.index = node.panel.sockets.indexOf(node);
-            }
+        }
         for(const node of nodesToRemove) {
             this.selection.delete(node);
             switch(node.type) {

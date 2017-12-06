@@ -668,7 +668,7 @@ export default class WiredPanels {
                 this.changeGraph(nodesToAdd, nodesToRemove);
             else
                 this.changeGraph(nodesToRemove, nodesToAdd);
-            if(callback)
+            if(callback !== undefined)
                 callback(forward);
         }.bind(this));
     }

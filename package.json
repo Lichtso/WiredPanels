@@ -8,6 +8,7 @@
   "scripts": {
     "test": "node tests/simple-test.js",
     "docs": "documentation readme WiredPanels.js --section=API",
+    "lint": "documentation lint WiredPanels.js",
     "semantic-release": "semantic-release"
   },
   "bugs": {

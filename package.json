@@ -1,15 +1,13 @@
 {
   "name": "WiredPanels",
   "version": "0.0.0-semantic-release",
-  "authors": [
-    "Alexander Meißner",
-    "Markus Felten"
-  ],
+  "authors": ["Alexander Meißner", "Markus Felten"],
   "license": "MIT",
   "description": "Panels with sockets connected by bezier curve wires",
   "module": "WiredPanels.js",
   "scripts": {
     "test": "node tests/simple-test.js",
+    "docs": "documentation readme WiredPanels.js --section=API",
     "semantic-release": "semantic-release"
   },
   "bugs": {
@@ -22,10 +20,11 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "koa": "^2.3.0",
-    "koa-static": "^4.0.1",
+    "koa": "^2.4.1",
+    "koa-static": "^4.0.2",
     "make-dir": "^1.1.0",
-    "puppeteer": "^0.12.0",
-    "semantic-release": "^9.1.0"
+    "puppeteer": "^0.13.0",
+    "semantic-release": "^11.0.2",
+    "documentation": "^5.3.5"
   }
 }

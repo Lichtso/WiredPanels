@@ -133,6 +133,26 @@ function tickWire(wire) {
     wire.primaryElement.setAttribute('d', pathD);
 }
 
+/**
+ * Container holding the graph of panels and wires
+ * @param {Object} config
+ * @param {number} config.socketRadius
+ * @param {boolean} config.verticalSocketsOutside
+ * @param {boolean} config.horizontalSocketsOutside
+ * @param {string} config.wireStyle
+ * @param {number} config.panelCornerRadius
+ * @param {number} config.panelPadding
+ * @param {number} config.panelMargin
+ * @param {number} config.springLength
+ * @param {number} config.springStiffness
+ * @param {boolean} config.panelCollision
+ * @param {boolean} config.borderCollision
+ * @param {number} config.undoActionLimit
+ * @param {Object} eventListeners
+ * @param {function} eventListeners.copy
+ * @param {function} eventListeners.paste
+ * @param {function} eventListeners.activate
+ */
 export default class WiredPanels {
     constructor(config={}, eventListeners={}) {
         const copy = function(event) {
@@ -385,6 +405,11 @@ export default class WiredPanels {
             this.changeGraphUndoable([], new Set(this.selection), callback);
     }
 
+    /**
+     * Create a new wire
+     * @param {Object} wire skeleton wire
+     * @return {Object} wire
+     */
     createWire(wire = {}) {
         wire.type = 'wire';
         wire.primaryElement = createElement('path');
@@ -393,6 +418,11 @@ export default class WiredPanels {
         return wire;
     }
 
+    /**
+     * Create a new panel
+     * @param {Object} panel skeleton panel
+     * @return {Object} panel
+     */
     createPanel(panel = {}) {
         panel.type = 'panel';
         panel.sockets = [];
@@ -423,6 +453,11 @@ export default class WiredPanels {
         return panel;
     }
 
+    /**
+     * Create a new socket
+     * @param {Object} socket skeleton socket
+     * @return {Object} socket
+     */
     createSocket(socket = {}) {
         socket.type = 'socket';
         socket.wiresPerPanel = new Map();
@@ -668,7 +703,7 @@ export default class WiredPanels {
                 this.changeGraph(nodesToAdd, nodesToRemove);
             else
                 this.changeGraph(nodesToRemove, nodesToAdd);
-            if(callback)
+            if(callback !== undefined)
                 callback(forward);
         }.bind(this));
     }

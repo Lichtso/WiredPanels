@@ -149,9 +149,12 @@ function tickWire(wire) {
  * @param {boolean} config.borderCollision
  * @param {number} config.undoActionLimit
  * @param {Object} eventListeners
+ * @param {function} eventListeners.wireDrag
+ * @param {function} eventListeners.wireConnect
+ * @param {function} eventListeners.activate
+ * @param {function} eventListeners.remove
  * @param {function} eventListeners.copy
  * @param {function} eventListeners.paste
- * @param {function} eventListeners.activate
  */
 export default class WiredPanels {
     constructor(config={}, eventListeners={}) {

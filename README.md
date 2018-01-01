@@ -7,9 +7,7 @@
 [![downloads](http://img.shields.io/npm/dm/WiredPanels.svg?style=flat-square)](https://npmjs.org/package/WiredPanels)
 [![Greenkeeper badge](https://badges.greenkeeper.io/Symatem/WiredPanels.svg)](https://greenkeeper.io/)
 
-# WiredPanels
-
-Features:
+# Features
 
 -   Framework to build an Editor or Visualizer
 -   No dependencies / no bloatware

@@ -80,14 +80,10 @@ function setupEventListeners(node) {
             if(!event.shiftKey && this.eventListeners.activate)
                 this.eventListeners.activate();
         } else if(this.dragging.type === 'wire' &&
-                  this.eventListeners.wireConnect) {
-            const nodesToAdd = new Set([this.dragging]),
-                  callback = this.eventListeners.wireConnect(node, this.dragging, nodesToAdd);
-            if(this.dragging.dstSocket.type === 'socket') {
-                this.dragging.primaryElement.classList.remove('ignore');
-                this.changeGraphUndoable(nodesToAdd, [], callback);
-                delete this.dragging;
-            }
+                  this.eventListeners.wireConnect &&
+                  this.eventListeners.wireConnect(node, this.dragging)) {
+            this.dragging.primaryElement.classList.remove('ignore');
+            delete this.dragging;
         }
     }.bind(this);
     node.primaryElement.addEventListener('mouseup', mouseup);
@@ -182,7 +178,7 @@ export default class WiredPanels {
         }.bind(this);
 
         const keydown = function(event) {
-            if(this.svg.parentNode.querySelector('svg:hover') === null || event.ctrlKey)
+            if(this.svg.parentNode.querySelector('svg:hover') === null)
                 return;
             if(event.metaKey)
                 switch(event.keyCode) {
@@ -345,7 +341,7 @@ export default class WiredPanels {
         feComponentTransfer.setAttribute('result', 'brighter');
         const feFunc = createElement('feFuncA', feComponentTransfer);
         feFunc.setAttribute('type', 'linear');
-        feFunc.setAttribute('slope', 2.5);
+        feFunc.setAttribute('slope', 2);
         const feMerge = createElement('feMerge', blurFilter);
         createElement('feMergeNode', feMerge).setAttribute('in', 'brighter');
         createElement('feMergeNode', feMerge).setAttribute('in', 'SourceGraphic');
@@ -359,8 +355,7 @@ export default class WiredPanels {
         this.wires = new Set();
         this.selection = new Set();
         this.tickCount = 0;
-        this.actionStack = [];
-        this.actionIndex = 0;
+        this.resetActionStack();
         this.config = Object.assign({
             socketRadius: 5,
             verticalSocketsOutside: false,
@@ -399,13 +394,8 @@ export default class WiredPanels {
     }
 
     deleteSelected() {
-        if(this.selection.size === 0)
-            return;
-        let callback;
-        if(this.eventListeners.remove)
-            callback = this.eventListeners.remove();
-        if(this.selection.size > 0 || callback)
-            this.changeGraphUndoable([], new Set(this.selection), callback);
+        if(this.selection.size > 0 && this.eventListeners.remove)
+            this.eventListeners.remove(this.selection);
     }
 
     /**
@@ -678,6 +668,11 @@ export default class WiredPanels {
                 tickWire.call(this, wire);
         }.bind(this);
         tickGraph(lastTime);
+    }
+
+    resetActionStack() {
+        this.actionStack = [];
+        this.actionIndex = 0;
     }
 
     undoableAction(action) {

@@ -35,10 +35,13 @@
 
 ### Table of Contents
 
+-   [RemoveCallback](#removecallback)
+-   [Wire](#wire)
+-   [Socket](#socket)
 -   [WireDragCallback](#wiredragcallback)
 -   [WireConnectCallback](#wireconnectcallback)
 -   [ActivateCallback](#activatecallback)
--   [RemoveCallback](#removecallback)
+-   [Panel](#panel)
 -   [CopyCallback](#copycallback)
 -   [PasteCallback](#pastecallback)
 -   [WiredPanels](#wiredpanels)
@@ -46,13 +49,39 @@
     -   [createPanel](#createpanel)
     -   [createSocket](#createsocket)
 
+## RemoveCallback
+
+Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** wires and panels to be removed
+
+Returns **void** 
+
+## Wire
+
+Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)
+
+**Properties**
+
+-   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='wire'
+
+## Socket
+
+Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)
+
+**Properties**
+
+-   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='socket'
+
 ## WireDragCallback
 
 Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
 
 **Parameters**
 
--   `socket` **Socket** 
+-   `socket` **[Socket](#socket)** 
 
 Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if drag action should start
 
@@ -62,8 +91,8 @@ Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Sta
 
 **Parameters**
 
--   `socket` **Socket** 
--   `wire` **Wire** 
+-   `socket` **[Socket](#socket)** 
+-   `wire` **[Wire](#wire)** 
 
 Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if connect action should succeed
 
@@ -75,13 +104,14 @@ Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Sta
 
 -   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
 
-## RemoveCallback
+## Panel
 
-Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
+Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)
 
-**Parameters**
+**Properties**
 
--   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
+-   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='panel'
+-   `sockets` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Socket](#socket)>** 
 
 ## CopyCallback
 
@@ -121,7 +151,7 @@ Container holding the graph of panels and wires
     -   `config.springStiffness` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** 
     -   `config.panelCollision` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
     -   `config.borderCollision` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
-    -   `config.undoActionLimit` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** 
+    -   `config.undoActionLimit` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** number of actions that can be undone
 -   `eventListeners` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)**  (optional, default `{}`)
     -   `eventListeners.wireDrag` **[WireDragCallback](#wiredragcallback)** 
     -   `eventListeners.wireConnect` **[WireConnectCallback](#wireconnectcallback)** 
@@ -138,7 +168,7 @@ Create a new wire
 
 -   `wire` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** skeleton wire (optional, default `{}`)
 
-Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** wire
+Returns **[Wire](#wire)** wire
 
 ### createPanel
 
@@ -148,7 +178,7 @@ Create a new panel
 
 -   `panel` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** skeleton panel (optional, default `{}`)
 
-Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** panel
+Returns **[Panel](#panel)** panel
 
 ### createSocket
 
@@ -158,7 +188,7 @@ Create a new socket
 
 -   `socket` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** skeleton socket (optional, default `{}`)
 
-Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** socket
+Returns **[Socket](#socket)** socket
 
 # Examples
 

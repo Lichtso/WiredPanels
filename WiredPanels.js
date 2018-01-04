@@ -130,6 +130,22 @@ function tickWire(wire) {
 }
 
 /**
+ * @typedef {Object} Wire
+ * @property {string} type='wire'
+ */
+
+/**
+ * @typedef {Object} Panel
+ * @property {string} type='panel'
+ * @property {Socket[]} sockets
+ */
+
+/**
+ * @typedef {Object} Socket
+ * @property {string} type='socket'
+ */
+
+/**
  * @callback WireDragCallback
  * @param {Socket} socket
  * @return {boolean} true if drag action should start
@@ -149,7 +165,8 @@ function tickWire(wire) {
 
 /**
  * @callback RemoveCallback
- * @param {Set} selection
+ * @param {Set} selection wires and panels to be removed
+ * @return {void}
  */
 
 /**
@@ -178,7 +195,7 @@ function tickWire(wire) {
  * @param {number} config.springStiffness
  * @param {boolean} config.panelCollision
  * @param {boolean} config.borderCollision
- * @param {number} config.undoActionLimit
+ * @param {number} config.undoActionLimit number of actions that can be undone
  * @param {Object} eventListeners
  * @param {WireDragCallback} eventListeners.wireDrag
  * @param {WireConnectCallback} eventListeners.wireConnect
@@ -436,7 +453,7 @@ export default class WiredPanels {
     /**
      * Create a new wire
      * @param {Object} wire skeleton wire
-     * @return {Object} wire
+     * @return {Wire} wire
      */
     createWire(wire = {}) {
         wire.type = 'wire';
@@ -449,7 +466,7 @@ export default class WiredPanels {
     /**
      * Create a new panel
      * @param {Object} panel skeleton panel
-     * @return {Object} panel
+     * @return {Panel} panel
      */
     createPanel(panel = {}) {
         panel.type = 'panel';
@@ -484,7 +501,7 @@ export default class WiredPanels {
     /**
      * Create a new socket
      * @param {Object} socket skeleton socket
-     * @return {Object} socket
+     * @return {Socket} socket
      */
     createSocket(socket = {}) {
         socket.type = 'socket';

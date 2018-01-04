@@ -28,7 +28,6 @@
     -   Backspace: Delete
     -   Meta (+ Shift) + Z: Undo & Redo
     -   Meta + A: Select all panels
-    -   Meta + X / C / V: Clipboard: Cut / Copy / Paste
 
 # API
 
@@ -36,10 +35,73 @@
 
 ### Table of Contents
 
+-   [WireDragCallback](#wiredragcallback)
+-   [WireConnectCallback](#wireconnectcallback)
+-   [ActivateCallback](#activatecallback)
+-   [RemoveCallback](#removecallback)
+-   [CopyCallback](#copycallback)
+-   [PasteCallback](#pastecallback)
 -   [WiredPanels](#wiredpanels)
     -   [createWire](#createwire)
     -   [createPanel](#createpanel)
     -   [createSocket](#createsocket)
+
+## WireDragCallback
+
+Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `socket` **Socket** 
+
+Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if drag action should start
+
+## WireConnectCallback
+
+Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `socket` **Socket** 
+-   `wire` **Wire** 
+
+Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if connect action should succeed
+
+## ActivateCallback
+
+Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
+
+## RemoveCallback
+
+Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
+
+## CopyCallback
+
+Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `clipboardData` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+
+Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if data was copied
+
+## PasteCallback
+
+Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `clipboardData` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+
+Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if data was accepted and can be pasted
 
 ## WiredPanels
 
@@ -61,9 +123,12 @@ Container holding the graph of panels and wires
     -   `config.borderCollision` **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
     -   `config.undoActionLimit` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** 
 -   `eventListeners` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)**  (optional, default `{}`)
-    -   `eventListeners.copy` **[function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)** 
-    -   `eventListeners.paste` **[function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)** 
-    -   `eventListeners.activate` **[function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)** 
+    -   `eventListeners.wireDrag` **[WireDragCallback](#wiredragcallback)** 
+    -   `eventListeners.wireConnect` **[WireConnectCallback](#wireconnectcallback)** 
+    -   `eventListeners.activate` **[ActivateCallback](#activatecallback)** 
+    -   `eventListeners.remove` **[RemoveCallback](#removecallback)** 
+    -   `eventListeners.copy` **[CopyCallback](#copycallback)** 
+    -   `eventListeners.paste` **[PasteCallback](#pastecallback)** 
 
 ### createWire
 

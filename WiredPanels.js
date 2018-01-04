@@ -78,7 +78,7 @@ function setupEventListeners(node) {
     const mouseup = function(event) {
         if(!this.draggingMoved) {
             if(!event.shiftKey && this.eventListeners.activate)
-                this.eventListeners.activate();
+                this.eventListeners.activate(this.selection);
         } else if(this.dragging.type === 'wire' &&
                   this.eventListeners.wireConnect &&
                   this.eventListeners.wireConnect(node, this.dragging)) {
@@ -130,6 +130,41 @@ function tickWire(wire) {
 }
 
 /**
+ * @callback WireDragCallback
+ * @param {Socket} socket
+ * @return {boolean} true if drag action should start
+ */
+
+/**
+ * @callback WireConnectCallback
+ * @param {Socket} socket
+ * @param {Wire} wire
+ * @return {boolean} true if connect action should succeed
+ */
+
+/**
+ * @callback ActivateCallback
+ * @param {Set} selection
+ */
+
+/**
+ * @callback RemoveCallback
+ * @param {Set} selection
+ */
+
+/**
+ * @callback CopyCallback
+ * @param {Object} clipboardData
+ * @return {boolean} true if data was copied
+ */
+
+/**
+ * @callback PasteCallback
+ * @param {Object} clipboardData
+ * @return {boolean} true if data was accepted and can be pasted
+ */
+
+/**
  * Container holding the graph of panels and wires
  * @param {Object} config
  * @param {number} config.socketRadius
@@ -145,12 +180,12 @@ function tickWire(wire) {
  * @param {boolean} config.borderCollision
  * @param {number} config.undoActionLimit
  * @param {Object} eventListeners
- * @param {function} eventListeners.wireDrag
- * @param {function} eventListeners.wireConnect
- * @param {function} eventListeners.activate
- * @param {function} eventListeners.remove
- * @param {function} eventListeners.copy
- * @param {function} eventListeners.paste
+ * @param {WireDragCallback} eventListeners.wireDrag
+ * @param {WireConnectCallback} eventListeners.wireConnect
+ * @param {ActivateCallback} eventListeners.activate
+ * @param {RemoveCallback} eventListeners.remove
+ * @param {CopyCallback} eventListeners.copy
+ * @param {PasteCallback} eventListeners.paste
  */
 export default class WiredPanels {
     constructor(config={}, eventListeners={}) {
@@ -207,7 +242,7 @@ export default class WiredPanels {
                     case 13: // Enter
                         if(this.selection.size === 0 || !this.eventListeners.activate)
                             return;
-                        this.eventListeners.activate();
+                        this.eventListeners.activate(this.selection);
                         break;
                     default:
                         return;
@@ -309,11 +344,9 @@ export default class WiredPanels {
             mouseleave(event);
         }.bind(this);
 
-        document.body.addEventListener('copy', copy);
+        /*document.body.addEventListener('copy', copy);
         document.body.addEventListener('cut', cut);
-        document.body.addEventListener('paste', paste);
-        document.body.addEventListener('drop', paste);
-        document.body.addEventListener('dragover', dragover);
+        document.body.addEventListener('paste', paste);*/
         document.body.addEventListener('keydown', keydown);
         this.svg = createElement('svg');
         this.svg.classList.add('WiredPanels');
@@ -324,6 +357,8 @@ export default class WiredPanels {
         this.svg.addEventListener('mouseup', mouseup);
         this.svg.addEventListener('mouseleave', mouseleave);
         this.svg.addEventListener('touchend', mouseup);
+        this.svg.addEventListener('drop', paste);
+        this.svg.addEventListener('dragover', dragover);
 
         const svgDefs = createElement('defs', this.svg);
         const blurFilter = createElement('filter', svgDefs);

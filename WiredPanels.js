@@ -138,11 +138,13 @@ function tickWire(wire) {
  * @typedef {Object} Panel
  * @property {string} type='panel'
  * @property {Socket[]} sockets
+ * @property {Map} springs
  */
 
 /**
  * @typedef {Object} Socket
  * @property {string} type='socket'
+ * @property {Map} wiresPerPanel
  */
 
 /**
@@ -203,6 +205,12 @@ function tickWire(wire) {
  * @param {RemoveCallback} eventListeners.remove
  * @param {CopyCallback} eventListeners.copy
  * @param {PasteCallback} eventListeners.paste
+ *
+ * @property {Set} panels
+ * @property {Set} springs
+ * @property {Set} wires
+ * @property {Set} selection
+ * @property {Object} config
  */
 export default class WiredPanels {
     constructor(config={}, eventListeners={}) {
@@ -518,6 +526,9 @@ export default class WiredPanels {
         return socket;
     }
 
+    /**
+     * @param {Panel} panel
+     */
     updatePanelSockets(panel) {
         panel.topSockets = [];
         panel.leftSockets = [];
@@ -554,6 +565,9 @@ export default class WiredPanels {
         this.updatePanelGeometry(panel);
     }
 
+    /**
+     * @param {Panel} panel
+     */
     updatePanelGeometry(panel) {
         const topAndBottomLine = (this.config.socketsOutside) ? 1 : 1.75,
               horizontalSocketPadding = (this.config.horizontalSocketsOutside) ? 2 : 3,

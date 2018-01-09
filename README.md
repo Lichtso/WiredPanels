@@ -35,29 +35,31 @@
 
 ### Table of Contents
 
--   [RemoveCallback](#removecallback)
+-   [CopyCallback](#copycallback)
 -   [Wire](#wire)
 -   [Socket](#socket)
 -   [WireDragCallback](#wiredragcallback)
 -   [WireConnectCallback](#wireconnectcallback)
 -   [ActivateCallback](#activatecallback)
+-   [RemoveCallback](#removecallback)
 -   [Panel](#panel)
--   [CopyCallback](#copycallback)
 -   [PasteCallback](#pastecallback)
 -   [WiredPanels](#wiredpanels)
     -   [createWire](#createwire)
     -   [createPanel](#createpanel)
     -   [createSocket](#createsocket)
+    -   [updatePanelSockets](#updatepanelsockets)
+    -   [updatePanelGeometry](#updatepanelgeometry)
 
-## RemoveCallback
+## CopyCallback
 
 Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
 
 **Parameters**
 
--   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** wires and panels to be removed
+-   `clipboardData` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
-Returns **void** 
+Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if data was copied
 
 ## Wire
 
@@ -74,6 +76,7 @@ Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Globa
 **Properties**
 
 -   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='socket'
+-   `wiresPerPanel` **[Map](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map)** 
 
 ## WireDragCallback
 
@@ -104,6 +107,16 @@ Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Sta
 
 -   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
 
+## RemoveCallback
+
+Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** wires and panels to be removed
+
+Returns **void** 
+
 ## Panel
 
 Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)
@@ -112,16 +125,7 @@ Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Globa
 
 -   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='panel'
 -   `sockets` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Socket](#socket)>** 
-
-## CopyCallback
-
-Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
-
-**Parameters**
-
--   `clipboardData` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-
-Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if data was copied
+-   `springs` **[Map](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map)** 
 
 ## PasteCallback
 
@@ -160,6 +164,14 @@ Container holding the graph of panels and wires
     -   `eventListeners.copy` **[CopyCallback](#copycallback)** 
     -   `eventListeners.paste` **[PasteCallback](#pastecallback)** 
 
+**Properties**
+
+-   `panels` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
+-   `springs` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
+-   `wires` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
+-   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
+-   `config` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+
 ### createWire
 
 Create a new wire
@@ -189,6 +201,18 @@ Create a new socket
 -   `socket` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** skeleton socket (optional, default `{}`)
 
 Returns **[Socket](#socket)** socket
+
+### updatePanelSockets
+
+**Parameters**
+
+-   `panel` **[Panel](#panel)** 
+
+### updatePanelGeometry
+
+**Parameters**
+
+-   `panel` **[Panel](#panel)** 
 
 # Examples
 

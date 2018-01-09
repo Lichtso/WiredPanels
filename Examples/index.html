@@ -12,7 +12,7 @@
         <script type="module">
             import WiredPanels from '../WiredPanels.js';
             const wiredPanels = new WiredPanels({}, {
-                'activate': function() {
+                activate() {
                     const panels = new Set();
                     for(const node of wiredPanels.selection)
                         if(node.type !== 'wire') {
@@ -24,10 +24,10 @@
                     for(const node of panels)
                         wiredPanels.updatePanelGeometry(node);
                 },
-                'wireDrag': function(socket) {
+                wireDrag(socket) {
                     return true;
                 },
-                'wireConnect': function(node, wire, nodesToAdd) {
+                wireConnect(node, wire, nodesToAdd) {
                     if(node.type === 'panel') {
                         const rect = wiredPanels.boundingRectOfPanel(node),
                               diffX = wire.dstSocket.primaryElement.x-(rect[0]+rect[1])/2,

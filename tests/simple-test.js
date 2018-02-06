@@ -26,7 +26,7 @@ async function runPuppeteer(sd) {
 
   page.on('console', (...args) => {
     //console.log.apply(console, ['[Browser]', ...args]);
-    console.log(args[0].text);
+    //console.log(args[0].text);
   });
 
   await page.goto(`http://localhost:${PORT}/tests/index.html`);
@@ -41,6 +41,7 @@ async function runPuppeteer(sd) {
     looksSame(
       screenshot,
       path.join(__dirname, '..', 'tests', 'fixtures', 'onePanel.png'),
+      { tolerance: 20, ignoreCaret: true },
       (error, equal) => {
         if (error) {
           reject(error);

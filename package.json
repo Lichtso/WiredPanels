@@ -29,8 +29,8 @@
     "koa": "^2.5.0",
     "koa-static": "^4.0.2",
     "looks-same": "^3.3.0",
-    "make-dir": "^1.1.0",
-    "puppeteer": "^1.0.0",
+    "make-dir": "^1.2.0",
+    "puppeteer": "^1.1.0",
     "semantic-release": "^12.4.1"
   },
   "ava": {

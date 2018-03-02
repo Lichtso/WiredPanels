@@ -24,10 +24,14 @@
                     for(const node of panels)
                         wiredPanels.updatePanelGeometry(node);
                 },
+                remove() {
+                    wiredPanels.changeGraphUndoable([], new Set(wiredPanels.selection));
+                },
                 wireDrag(socket) {
                     return true;
                 },
-                wireConnect(node, wire, nodesToAdd) {
+                wireConnect(node, wire) {
+                    const nodesToAdd = new Set([wire]), nodesToRemove = new Set();
                     if(node.type === 'panel') {
                         const rect = wiredPanels.boundingRectOfPanel(node),
                               diffX = wire.dstSocket.primaryElement.x-(rect[0]+rect[1])/2,
@@ -42,6 +46,8 @@
                         nodesToAdd.add(wire.dstSocket);
                     } else if(node !== wire.srcSocket)
                         wire.dstSocket = node;
+                    wiredPanels.changeGraphUndoable(nodesToAdd, nodesToRemove);
+                    return true;
                 }
             });
             wiredPanels.svg.ondblclick = function(event) {

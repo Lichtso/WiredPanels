@@ -49,14 +49,22 @@ async function runPuppeteer(sd) {
     'onePanel.png'
   );
 
-  //console.log(`fixture: ${fixtureScreenShot}`);
+  try {
+    if (!await paccess(fixtureScreenShot, constants.F_OK)) {
+      console.log(
+        `fixture not present asuming ok on platform: ${fixtureScreenShot}`
+      );
 
-  if (!await paccess(fixtureScreenShot, constants.R_OK)) {
-    console.log(
-      `fixture not present asuming ok on platform: ${fixtureScreenShot}`
-    );
+      return Promise.resolve(true);
+    }
+  } catch (e) {
+    if (e.code === 'ENOENT') {
+      console.log(
+        `fixture not present asuming ok on platform: ${fixtureScreenShot}`
+      );
 
-    return Promise.resolve(true);
+      return Promise.resolve(true);
+    }
   }
 
   return new Promise((resolve, reject) => {

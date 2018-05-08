@@ -31,7 +31,7 @@
     "looks-same": "^3.3.0",
     "make-dir": "^1.2.0",
     "puppeteer": "^1.3.0",
-    "semantic-release": "^15.2.0"
+    "semantic-release": "^15.4.0"
   },
   "ava": {
     "files": [

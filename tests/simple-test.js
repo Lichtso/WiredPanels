@@ -50,13 +50,7 @@ async function runPuppeteer(sd) {
   );
 
   try {
-    if (!await paccess(fixtureScreenShot, constants.F_OK)) {
-      console.log(
-        `fixture not present asuming ok on platform: ${fixtureScreenShot}`
-      );
-
-      return Promise.resolve(true);
-    }
+    await paccess(fixtureScreenShot);
   } catch (e) {
     if (e.code === 'ENOENT') {
       console.log(

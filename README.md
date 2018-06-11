@@ -36,26 +36,42 @@
 ### Table of Contents
 
 -   [CopyCallback](#copycallback)
+    -   [Parameters](#parameters)
 -   [Wire](#wire)
+    -   [Properties](#properties)
 -   [Socket](#socket)
+    -   [Properties](#properties-1)
 -   [WireDragCallback](#wiredragcallback)
+    -   [Parameters](#parameters-1)
 -   [WireConnectCallback](#wireconnectcallback)
+    -   [Parameters](#parameters-2)
 -   [ActivateCallback](#activatecallback)
+    -   [Parameters](#parameters-3)
 -   [RemoveCallback](#removecallback)
+    -   [Parameters](#parameters-4)
 -   [Panel](#panel)
+    -   [Properties](#properties-2)
 -   [PasteCallback](#pastecallback)
+    -   [Parameters](#parameters-5)
 -   [WiredPanels](#wiredpanels)
+    -   [Parameters](#parameters-6)
+    -   [Properties](#properties-3)
     -   [createWire](#createwire)
+        -   [Parameters](#parameters-7)
     -   [createPanel](#createpanel)
+        -   [Parameters](#parameters-8)
     -   [createSocket](#createsocket)
+        -   [Parameters](#parameters-9)
     -   [updatePanelSockets](#updatepanelsockets)
+        -   [Parameters](#parameters-10)
     -   [updatePanelGeometry](#updatepanelgeometry)
+        -   [Parameters](#parameters-11)
 
 ## CopyCallback
 
 Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
 
-**Parameters**
+### Parameters
 
 -   `clipboardData` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
@@ -65,7 +81,7 @@ Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)
 
-**Properties**
+### Properties
 
 -   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='wire'
 
@@ -73,7 +89,7 @@ Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Globa
 
 Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)
 
-**Properties**
+### Properties
 
 -   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='socket'
 -   `wiresPerPanel` **[Map](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map)** 
@@ -82,7 +98,7 @@ Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Globa
 
 Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
 
-**Parameters**
+### Parameters
 
 -   `socket` **[Socket](#socket)** 
 
@@ -92,7 +108,7 @@ Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
 
-**Parameters**
+### Parameters
 
 -   `socket` **[Socket](#socket)** 
 -   `wire` **[Wire](#wire)** 
@@ -103,7 +119,7 @@ Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
 
-**Parameters**
+### Parameters
 
 -   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
 
@@ -111,7 +127,7 @@ Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Sta
 
 Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
 
-**Parameters**
+### Parameters
 
 -   `selection` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** wires and panels to be removed
 
@@ -121,7 +137,7 @@ Returns **void**
 
 Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)
 
-**Properties**
+### Properties
 
 -   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='panel'
 -   `sockets` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Socket](#socket)>** 
@@ -131,7 +147,7 @@ Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Globa
 
 Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
 
-**Parameters**
+### Parameters
 
 -   `clipboardData` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
@@ -141,7 +157,7 @@ Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 Container holding the graph of panels and wires
 
-**Parameters**
+### Parameters
 
 -   `config` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)**  (optional, default `{}`)
     -   `config.socketRadius` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** 
@@ -164,7 +180,7 @@ Container holding the graph of panels and wires
     -   `eventListeners.copy` **[CopyCallback](#copycallback)** 
     -   `eventListeners.paste` **[PasteCallback](#pastecallback)** 
 
-**Properties**
+### Properties
 
 -   `panels` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
 -   `springs` **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)** 
@@ -176,7 +192,7 @@ Container holding the graph of panels and wires
 
 Create a new wire
 
-**Parameters**
+#### Parameters
 
 -   `wire` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** skeleton wire (optional, default `{}`)
 
@@ -186,7 +202,7 @@ Returns **[Wire](#wire)** wire
 
 Create a new panel
 
-**Parameters**
+#### Parameters
 
 -   `panel` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** skeleton panel (optional, default `{}`)
 
@@ -196,7 +212,7 @@ Returns **[Panel](#panel)** panel
 
 Create a new socket
 
-**Parameters**
+#### Parameters
 
 -   `socket` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** skeleton socket (optional, default `{}`)
 
@@ -204,13 +220,13 @@ Returns **[Socket](#socket)** socket
 
 ### updatePanelSockets
 
-**Parameters**
+#### Parameters
 
 -   `panel` **[Panel](#panel)** 
 
 ### updatePanelGeometry
 
-**Parameters**
+#### Parameters
 
 -   `panel` **[Panel](#panel)** 
 

@@ -1,7 +1,10 @@
 {
   "name": "WiredPanels",
   "version": "0.0.0-semantic-release",
-  "authors": ["Alexander Meißner", "Markus Felten"],
+  "authors": [
+    "Alexander Meißner",
+    "Markus Felten"
+  ],
   "license": "MIT",
   "description": "Panels with sockets connected by bezier curve wires",
   "module": "WiredPanels.mjs",
@@ -31,7 +34,11 @@
     "semantic-release": "^15.6.0"
   },
   "ava": {
-    "files": ["tests/*-test.js"],
-    "require": ["babel-register"]
+    "files": [
+      "tests/*-test.js"
+    ],
+    "require": [
+      "babel-register"
+    ]
   }
 }

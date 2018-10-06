@@ -7,7 +7,7 @@
   ],
   "license": "MIT",
   "description": "Panels with sockets connected by bezier curve wires",
-  "module": "WiredPanels.mjs",
+  "module": "WiredPanels.js",
   "scripts": {
     "test": "ava",
     "docs": "documentation readme WiredPanels.js --section=API",

@@ -805,7 +805,7 @@ export default class WiredPanels {
                     }
                     if(!connectSocket(node.srcSocket, node.dstSocket.panel) ||
                        !connectSocket(node.dstSocket, node.srcSocket.panel))
-                        console.error('Wire was already connected', node);
+                        throw new Error('Wire was already connected', node);
                     if(node.srcSocket.panel !== node.dstSocket.panel) {
                         let spring = node.srcSocket.panel.springs.get(node.dstSocket.panel);
                         if(spring)
@@ -868,7 +868,7 @@ export default class WiredPanels {
                     }
                     if(!disconnectSocket(node.srcSocket, node.dstSocket.panel) ||
                        !disconnectSocket(node.dstSocket, node.srcSocket.panel))
-                        console.error('Wire was already disconnected', node);
+                        throw new Error('Wire was already disconnected', node);
                     if(node.srcSocket.panel !== node.dstSocket.panel) {
                         const spring = node.srcSocket.panel.springs.get(node.dstSocket.panel);
                         if(spring.referenceCount > 1)

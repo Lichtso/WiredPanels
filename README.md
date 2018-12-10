@@ -35,22 +35,22 @@
 
 ### Table of Contents
 
--   [CopyCallback](#copycallback)
-    -   [Parameters](#parameters)
 -   [Wire](#wire)
     -   [Properties](#properties)
--   [Socket](#socket)
-    -   [Properties](#properties-1)
--   [WireDragCallback](#wiredragcallback)
-    -   [Parameters](#parameters-1)
--   [WireConnectCallback](#wireconnectcallback)
-    -   [Parameters](#parameters-2)
--   [ActivateCallback](#activatecallback)
-    -   [Parameters](#parameters-3)
--   [RemoveCallback](#removecallback)
-    -   [Parameters](#parameters-4)
 -   [Panel](#panel)
+    -   [Properties](#properties-1)
+-   [Socket](#socket)
     -   [Properties](#properties-2)
+-   [WireDragCallback](#wiredragcallback)
+    -   [Parameters](#parameters)
+-   [WireConnectCallback](#wireconnectcallback)
+    -   [Parameters](#parameters-1)
+-   [ActivateCallback](#activatecallback)
+    -   [Parameters](#parameters-2)
+-   [RemoveCallback](#removecallback)
+    -   [Parameters](#parameters-3)
+-   [CopyCallback](#copycallback)
+    -   [Parameters](#parameters-4)
 -   [PasteCallback](#pastecallback)
     -   [Parameters](#parameters-5)
 -   [WiredPanels](#wiredpanels)
@@ -67,16 +67,6 @@
     -   [updatePanelGeometry](#updatepanelgeometry)
         -   [Parameters](#parameters-11)
 
-## CopyCallback
-
-Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
-
-### Parameters
-
--   `clipboardData` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-
-Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if data was copied
-
 ## Wire
 
 Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)
@@ -84,6 +74,16 @@ Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Globa
 ### Properties
 
 -   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='wire'
+
+## Panel
+
+Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)
+
+### Properties
+
+-   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='panel'
+-   `sockets` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Socket](#socket)>** 
+-   `springs` **[Map](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map)** 
 
 ## Socket
 
@@ -133,15 +133,15 @@ Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Sta
 
 Returns **void** 
 
-## Panel
+## CopyCallback
 
-Type: [Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)
+Type: [Function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)
 
-### Properties
+### Parameters
 
--   `type` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** ='panel'
--   `sockets` **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Socket](#socket)>** 
--   `springs` **[Map](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map)** 
+-   `clipboardData` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+
+Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** true if data was copied
 
 ## PasteCallback
 

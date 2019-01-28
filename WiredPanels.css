@@ -22,7 +22,7 @@
     padding: 0px;
     margin: 0px;
     overflow: hidden;
-    position: relative;
+    position: absolute;
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
@@ -43,7 +43,7 @@
 
 .WiredPanels .boxSelection {
     pointer-events: none;
-    stroke-width: 1;
+    stroke-width: 1px;
     fill-opacity: 0.4;
     stroke: var(--box-selection-color);
     fill: var(--box-selection-color);
@@ -51,7 +51,7 @@
 
 .WiredPanels .panel {
     cursor: default;
-    stroke-width: 1;
+    stroke-width: 1px;
     transition: stroke-width 0.25s;
     fill: var(--panel-fill);
     stroke: var(--panel-stroke);
@@ -62,11 +62,11 @@
 }
 
 .WiredPanels rect.panel.selected {
-    stroke-width: 2;
+    stroke-width: 2px;
 }
 
 .WiredPanels rect.panel:hover {
-    stroke-width: 3;
+    stroke-width: 3px;
 }
 
 .WiredPanels .label {
@@ -81,24 +81,24 @@
 .WiredPanels .socket {
     cursor: pointer;
     transition: stroke-width 0.25s;
-    stroke-width: 2;
+    stroke-width: 2px;
     fill: var(--socket-fill);
     stroke: var(--socket-stroke);
 }
 
 .WiredPanels .socket.selected {
-    stroke-width: 2.5;
+    stroke-width: 2.5px;
 }
 
 .WiredPanels .socket:hover {
-    stroke-width: 4;
+    stroke-width: 4px;
 }
 
 .WiredPanels .wire {
     cursor: pointer;
     transition: stroke-opacity 0.25s;
     stroke-linecap: round;
-    stroke-width: 4;
+    stroke-width: 4px;
     stroke-opacity: 0.6;
     fill: none;
     stroke: var(--wire-stroke);
